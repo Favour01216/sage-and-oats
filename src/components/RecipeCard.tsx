@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Clock, Heart, Star } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { SkeletonCard } from "./ui/Shimmer";
 import { getOptimizedImageProps } from "@/src/lib/image-optimization";
 import { HeartButton } from "./HeartButton";
+import { SafeImage } from "./SafeImage";
 
 interface RecipeCardProps {
   href: string;
@@ -35,6 +35,7 @@ export default function RecipeCard({
         "group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative",
         className
       )}
+      data-testid="recipe-card"
     >
       <Link href={href} className="block" aria-label={`Open recipe: ${title}`}>
         <div className="aspect-[4/3] md:aspect-[16/9] relative overflow-hidden">
@@ -45,13 +46,15 @@ export default function RecipeCard({
             );
 
             if (isEdamamImage && imageUrl) {
-              // For Edamam images, use a regular img tag to avoid Next.js optimization issues
+              // For Edamam images, use SafeImage with unoptimized flag
               return (
-                <img
+                <SafeImage
                   src={imageUrl}
                   alt={title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  unoptimized
                 />
               );
             }
@@ -63,9 +66,10 @@ export default function RecipeCard({
             });
 
             return imageProps ? (
-              <Image
+              <SafeImage
                 {...imageProps}
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
             ) : (

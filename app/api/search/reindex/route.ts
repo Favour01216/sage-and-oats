@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { recipesIndex, RecipeSearchRecord } from "@/src/lib/algolia";
+import { adminClient, recipesIndexName, RecipeSearchRecord } from "@/src/lib/algolia";
 
 export async function POST(request: Request) {
   try {
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
     const nutritionMap =
       nutrition?.reduce((acc, nut) => {
-        acc[nut.recipe_id] = nut.calories;
+        acc[nut.recipe_id] = nut.calories || 0;
         return acc;
       }, {} as Record<string, number>) || {};
 
@@ -69,8 +69,8 @@ export async function POST(request: Request) {
     }));
 
     // Save to Algolia
-    if (recipesIndex) {
-      await recipesIndex.saveObjects(records);
+    if (adminClient) {
+      await adminClient.saveObjects({ indexName: recipesIndexName, objects: records as unknown as Record<string, unknown>[] });
     }
 
     return NextResponse.json({
