@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run TypeScript type checking
+        run: npm run typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run unit tests
+        run: npm run test:unit
+      
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      
+      - name: Run Playwright tests
+        run: npm run test
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SOURCE_MODE: live
+          NEXT_PUBLIC_ALGOLIA_APP_ID: ${{ secrets.ALGOLIA_APP_ID }}
+          NEXT_PUBLIC_ALGOLIA_INDEX_NAME: ${{ secrets.ALGOLIA_INDEX_NAME }}
+          NEXT_PUBLIC_ALGOLIA_SEARCH_KEY: ${{ secrets.ALGOLIA_SEARCH_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SOURCE_MODE: live
+          NEXT_PUBLIC_ALGOLIA_APP_ID: ${{ secrets.ALGOLIA_APP_ID }}
+          NEXT_PUBLIC_ALGOLIA_INDEX_NAME: ${{ secrets.ALGOLIA_INDEX_NAME }}
+          NEXT_PUBLIC_ALGOLIA_SEARCH_KEY: ${{ secrets.ALGOLIA_SEARCH_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      
+      - name: Start server
+        run: |
+          npm run start &
+          sleep 10
+      
+      - name: Run Lighthouse
+        run: |
+          npm install -g lighthouse
+          lighthouse http://localhost:3000 \
+            --output=json \
+            --output-path=./lighthouse-results.json \
+            --only-categories=performance,accessibility \
+            --preset=desktop \
+            --chrome-flags="--headless"
+      
+      - name: Check Lighthouse scores
+        run: |
+          node -e "
+          const results = require('./lighthouse-results.json');
+          const perf = results.categories.performance.score * 100;
+          const a11y = results.categories.accessibility.score * 100;
+          
+          console.log('Performance score:', perf);
+          console.log('Accessibility score:', a11y);
+          
+          if (perf < 90) {
+            console.error('Performance score below 90');
+            process.exit(1);
+          }
+          if (a11y < 95) {
+            console.error('Accessibility score below 95');
+            process.exit(1);
+          }
+          "
+      
+      - name: Upload Lighthouse results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: lighthouse-results
+          path: lighthouse-results.json
+          retention-days: 30
