@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://sageandoat.com/sitemap.xml
+
+# Disallow admin and API routes
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dev/
+
+# Allow recipe pages
+Allow: /recipe/
+Allow: /search
+Allow: /cook/

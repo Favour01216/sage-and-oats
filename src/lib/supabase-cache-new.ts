@@ -1,0 +1,186 @@
+import { createClient } from "./supabase/client";
+
+interface EdamamRecipe {
+  uri: string;
+  label: string;
+  image: string;
+  source: string;
+  url: string;
+  yield: number;
+  dietLabels: string[];
+  healthLabels: string[];
+  cautions: string[];
+  ingredientLines: string[];
+  ingredients: any[];
+  calories: number;
+  totalTime: number;
+  cuisineType: string[];
+  mealType: string[];
+  dishType: string[];
+}
+
+export class SupabaseRecipeCache {
+  private supabase = createClient();
+  private readonly CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+  private readonly SEARCH_CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
+
+  async cacheRecipe(
+    recipeUri: string,
+    recipeData: EdamamRecipe
+  ): Promise<void> {
+    try {
+      const { error } = await this.supabase.from("cached_recipes").upsert(
+        {
+          recipe_uri: recipeUri,
+          recipe_data: recipeData as any,
+          last_accessed: new Date().toISOString(),
+          expires_at: new Date(Date.now() + this.CACHE_DURATION).toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "recipe_uri",
+        }
+      );
+
+      if (error) {
+        console.error("Failed to cache recipe:", error);
+      } else {
+        console.log(
+          "✅ Recipe cached in Supabase:",
+          recipeUri.slice(0, 50) + "..."
+        );
+      }
+    } catch (error) {
+      console.error("Cache recipe error:", error);
+    }
+  }
+
+  // Get cached recipe from Supabase
+  async getCachedRecipe(recipeUri: string): Promise<any | null> {
+    try {
+      const { data, error } = await this.supabase
+        .from("cached_recipes")
+        .select("recipe_data, save_count")
+        .eq("recipe_uri", recipeUri)
+        .gte("expires_at", new Date().toISOString())
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      // Update last accessed timestamp in background
+      this.supabase
+        .from("cached_recipes")
+        .update({
+          last_accessed: new Date().toISOString(),
+        })
+        .eq("recipe_uri", recipeUri)
+        .then();
+
+      return data.recipe_data;
+    } catch (error) {
+      console.error("Get cached recipe error:", error);
+      return null;
+    }
+  }
+
+  // Cache search results
+  async cacheSearch(searchKey: string, results: any): Promise<void> {
+    try {
+      const { error } = await this.supabase.from("search_cache").upsert(
+        {
+          cache_key: searchKey,
+          search_results: results as any,
+          updated_at: new Date().toISOString(),
+          expires_at: new Date(
+            Date.now() + this.SEARCH_CACHE_DURATION
+          ).toISOString(),
+        },
+        {
+          onConflict: "cache_key",
+        }
+      );
+
+      if (error) {
+        console.error("Failed to cache search:", error);
+      }
+    } catch (error) {
+      console.error("Cache search error:", error);
+    }
+  }
+
+  // Get cached search results
+  async getCachedSearch(searchKey: string): Promise<any | null> {
+    try {
+      const { data, error } = await this.supabase
+        .from("search_cache")
+        .select("search_results, hit_count")
+        .eq("cache_key", searchKey)
+        .gte("expires_at", new Date().toISOString())
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      // Increment hit count in background
+      this.supabase
+        .from("search_cache")
+        .update({
+          hit_count: (data.hit_count || 0) + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("cache_key", searchKey)
+        .then();
+
+      return data.search_results;
+    } catch (error) {
+      console.error("Get cached search error:", error);
+      return null;
+    }
+  }
+
+  // Get popular recipes based on save count
+  async getPopularRecipes(limit: number = 12): Promise<any[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from("cached_recipes")
+        .select("recipe_uri, recipe_data, save_count")
+        .gte("expires_at", new Date().toISOString())
+        .order("save_count", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error("Failed to get popular recipes:", error);
+        return [];
+      }
+
+      return (
+        data?.map((item: any) => ({
+          uri: item.recipe_uri,
+          ...item.recipe_data,
+          saveCount: item.save_count,
+        })) || []
+      );
+    } catch (error) {
+      console.error("Get popular recipes error:", error);
+      return [];
+    }
+  }
+
+  // Clean up expired cache entries using the database function
+  async cleanupExpiredCache(): Promise<void> {
+    try {
+      const { error } = await this.supabase.rpc("cleanup_expired_cache");
+
+      if (error) {
+        console.error("Failed to cleanup expired cache:", error);
+      }
+    } catch (error) {
+      console.error("Cleanup expired cache error:", error);
+    }
+  }
+}
+
+export const supabaseCache = new SupabaseRecipeCache();
