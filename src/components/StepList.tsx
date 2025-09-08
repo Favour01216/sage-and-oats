@@ -2,6 +2,8 @@
 
 import { ExternalLink, Clock, BookOpen } from 'lucide-react'
 import { cn } from '@/src/lib/utils'
+import { getAttributionInfo } from '@/src/lib/instructions/ingest'
+import { AttributionBar } from './AttributionBar'
 
 interface Step {
   text: string
@@ -23,6 +25,9 @@ export function StepList({
   className, 
   cookMode = false 
 }: StepListProps) {
+  
+  // Get attribution info for this recipe
+  const attribution = getAttributionInfo(sourceUrl);
   
   // Check if this is just a link to external instructions
   const hasOnlyExternalLink = steps.length === 1 && 
@@ -116,17 +121,13 @@ export function StepList({
         ))}
       </ol>
 
-      {sourceUrl && (
-        <div className="mt-6 pt-4 border-t border-border">
-          <a
-            href={sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 text-sm"
-          >
-            View original recipe
-            <ExternalLink className="w-4 h-4" />
-          </a>
+      {/* Attribution bar if needed */}
+      {attribution.needsAttribution && (
+        <div className="mt-6">
+          <AttributionBar
+            attributionText={attribution.attributionText!}
+            sourceLink={attribution.sourceLink}
+          />
         </div>
       )}
     </div>

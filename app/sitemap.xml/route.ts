@@ -8,7 +8,7 @@ export async function GET() {
     // Fetch all published recipes
     const { data: recipes } = await supabase
       .from("recipes")
-      .select("slug, updated_at")
+      .select("slug, updated_at, created_at")
       .eq("status", "published")
       .order("updated_at", { ascending: false });
 
@@ -34,7 +34,7 @@ ${
       (recipe) => `  <url>
     <loc>${baseUrl}/recipe/${recipe.slug}</loc>
     <lastmod>${new Date(
-      recipe.updated_at || recipe.updated_at
+      recipe.updated_at || recipe.created_at
     ).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

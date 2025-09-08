@@ -31,14 +31,12 @@ export class SupabaseRecipeCache {
     try {
       const { error } = await this.supabase.from("cached_recipes").upsert(
         {
-          recipe_uri: recipeUri,
+          uri: recipeUri,
           recipe_data: recipeData as any,
-          last_accessed: new Date().toISOString(),
           expires_at: new Date(Date.now() + this.CACHE_DURATION).toISOString(),
-          updated_at: new Date().toISOString(),
         },
         {
-          onConflict: "recipe_uri",
+          onConflict: "uri",
         }
       );
 
@@ -61,7 +59,7 @@ export class SupabaseRecipeCache {
       const { data, error } = await this.supabase
         .from("cached_recipes")
         .select("recipe_data, save_count")
-        .eq("recipe_uri", recipeUri)
+        .eq("uri", recipeUri)
         .gte("expires_at", new Date().toISOString())
         .single();
 
@@ -72,10 +70,10 @@ export class SupabaseRecipeCache {
       // Update last accessed timestamp in background
       this.supabase
         .from("cached_recipes")
-        .update({
-          last_accessed: new Date().toISOString(),
+        .update(        {
+          view_count: 1,
         })
-        .eq("recipe_uri", recipeUri)
+        .eq("uri", recipeUri)
         .then();
 
       return data.recipe_data;
@@ -91,8 +89,8 @@ export class SupabaseRecipeCache {
       const { error } = await this.supabase.from("search_cache").upsert(
         {
           cache_key: searchKey,
-          search_results: results as any,
-          updated_at: new Date().toISOString(),
+          query_params: {} as any,
+          results: results as any,
           expires_at: new Date(
             Date.now() + this.SEARCH_CACHE_DURATION
           ).toISOString(),
@@ -115,7 +113,7 @@ export class SupabaseRecipeCache {
     try {
       const { data, error } = await this.supabase
         .from("search_cache")
-        .select("search_results, hit_count")
+        .select("results, hit_count")
         .eq("cache_key", searchKey)
         .gte("expires_at", new Date().toISOString())
         .single();
@@ -129,12 +127,11 @@ export class SupabaseRecipeCache {
         .from("search_cache")
         .update({
           hit_count: (data.hit_count || 0) + 1,
-          updated_at: new Date().toISOString(),
         })
         .eq("cache_key", searchKey)
         .then();
 
-      return data.search_results;
+      return data.results;
     } catch (error) {
       console.error("Get cached search error:", error);
       return null;
@@ -146,7 +143,7 @@ export class SupabaseRecipeCache {
     try {
       const { data, error } = await this.supabase
         .from("cached_recipes")
-        .select("recipe_uri, recipe_data, save_count")
+        .select("uri, recipe_data, save_count")
         .gte("expires_at", new Date().toISOString())
         .order("save_count", { ascending: false })
         .limit(limit);
@@ -158,7 +155,7 @@ export class SupabaseRecipeCache {
 
       return (
         data?.map((item: any) => ({
-          uri: item.recipe_uri,
+          uri: item.uri,
           ...item.recipe_data,
           saveCount: item.save_count,
         })) || []

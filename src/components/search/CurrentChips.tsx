@@ -13,7 +13,6 @@ export default function CurrentChips() {
           label: 'flex items-center gap-2',
           categoryLabel: 'font-semibold',
           delete: 'ml-1 p-0.5 hover:bg-primary/20 rounded-full transition-colors',
-          deleteIcon: 'w-3 h-3',
         }}
       />
       <ClearRefinements

@@ -19,6 +19,9 @@ export const adminClient =
     ? algoliasearchFull(ALGOLIA_APP_ID, process.env.ALGOLIA_ADMIN_KEY)
     : null;
 
+// Export the index name for server-side operations  
+export const recipesIndexName = ALGOLIA_INDEX;
+
 export async function ensureIndexSettings() {
   if (!adminClient) {
     console.warn(
