@@ -112,6 +112,14 @@ Recipes are automatically indexed when published. Manual reindex:
 curl -X POST /api/search/reindex
 ```
 
+### Search Features
+
+- **Debounced Search**: 300ms debounce on search input to reduce API calls
+- **URL State Persistence**: Search state saved in URL for sharing and back/forward navigation
+- **Empty States**: Helpful UI when no results found with search suggestions
+- **Skeleton Loading**: Smooth loading states during search
+- **LIVE/MIRROR Modes**: Support for both external API search and local Algolia search
+
 ## ❤️ Hearts System
 
 ### Anonymous Hearts
@@ -149,12 +157,68 @@ curl -X POST /api/search/reindex
 - `Space`: Mark step complete
 - `Escape`: Exit cook mode
 
+## 📋 Instruction Ingestion
+
+### Allowlist + Attribution
+
+- **Domain Allowlist**: Instructions are only automatically extracted from trusted recipe sites
+- **Rate Limiting**: 1 request per second per domain to respect source sites
+- **Caching**: 24-hour TTL cache for parsed instructions
+- **Sanitization**: HTML stripped and normalized to plain text steps
+- **Attribution**: Always shows source attribution, with "View full instructions" link for non-allowed domains
+
+### Allowed Domains
+
+Major recipe sites including AllRecipes, Food Network, Bon Appétit, Serious Eats, and more. See `src/lib/instructions/ingest.ts` for full list.
+
+## 🔢 Servings & Unit Conversion
+
+### Servings Scaler
+
+- **Accurate Scaling**: `scaleFactor = currentServings / baseServings`
+- **Persistence**: Per-recipe servings saved in localStorage
+- **Edge Cases**: Handles fractional servings with proper rounding
+- **Mixed Fractions**: US measurements display as fractions (1 ½ cups)
+- **Minimum**: Enforces minimum of 1 serving
+
+### Unit Conversions
+
+- **US ↔ Metric**: Toggle between measurement systems
+- **Density Tables**: Accurate conversions for common ingredients:
+  - Flour: 120g/cup
+  - Sugar: 200g/cup
+  - Brown Sugar: 220g/cup
+  - Butter: 227g/cup
+- **Smart Formatting**: Fractions for US, decimals for metric
+- **Pipeline**: Scale in metric → convert to display units → format
+
+## 🥗 Nutrition Math
+
+### Per-Serving Calculations
+
+- **Single Source of Truth**: Total nutrition stored in `recipe_nutrition` table
+- **Dynamic Calculation**: `perServing = totalNutrition / currentServings`
+- **Unit Toggle Independent**: Changing units doesn't affect macro values
+- **Rounding**: Sensible rounding for display (calories to nearest whole, macros to 0.1g)
+
+### Daily Values
+
+- Based on FDA 2000 calorie reference diet
+- Calculated percentages for all major nutrients
+- Clear disclaimers about estimation accuracy
+
 ## 🧪 Testing
 
-### Playwright Tests
+### Test Commands
 
 ```bash
-# Run all tests
+# Run all tests (unit + integration + e2e)
+npm run test:ci
+
+# Unit tests only
+npm run test:unit
+
+# Playwright E2E tests
 npm test
 
 # Run with UI
@@ -162,15 +226,28 @@ npm run test:ui
 
 # Run headed (visible browser)
 npm run test:headed
+
+# Type checking
+npm run typecheck
+
+# Linting
+npm run lint
+npm run lint:fix
 ```
 
 ### Test Coverage
 
-- Anonymous hearts persistence and merging
-- Search filters and URL state
-- JSON-LD rendering and validation
-- Cook mode timer functionality
-- Recipe creation and editing
+- **Unit Tests**: Fraction utils, unit conversions, nutrition calculations, servings scaler
+- **Integration Tests**: Hearts persistence and merging, search with debounce
+- **E2E Tests**: Search filters and URL state, JSON-LD rendering, cook mode timers
+- **Property Tests**: Edge cases for scaling (1.5 × 2 = 3, 0.33 × 3 ≈ 1)
+
+### CI Pipeline
+
+- GitHub Actions workflow for all PRs
+- Parallel jobs for lint, typecheck, test, build
+- Lighthouse CI with thresholds (Performance ≥ 90, A11y ≥ 95)
+- Test artifacts uploaded for debugging
 
 ## 📊 Performance
 
@@ -235,6 +312,33 @@ Run the SQL migration on your production Supabase instance before first deploy.
 ### Cloudinary
 
 - `POST /api/cloudinary/sign` - Generate upload signatures
+
+## 🔑 SOURCE_MODE Usage
+
+### Configuration
+
+Set via environment variable:
+```bash
+SOURCE_MODE=live  # External API (Edamam/Spoonacular)
+SOURCE_MODE=mirror # Local database only
+```
+
+### LIVE Mode
+- Fetches recipes from external APIs
+- Real-time nutrition data
+- Requires API keys for Edamam/Spoonacular
+- Higher latency but always fresh data
+
+### MIRROR Mode
+- Uses cached recipes in Supabase
+- Instant response times
+- Works offline
+- Requires initial data sync
+
+### Key Consistency
+- `getRecipeKey()` ensures hearts/ratings work across both modes
+- Prefers external ID, falls back to slug
+- Consistent keying prevents duplicate data
 
 ## 🔒 Security
 
