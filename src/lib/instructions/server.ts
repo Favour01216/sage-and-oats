@@ -22,16 +22,14 @@ export async function ingestInstructionsLive(
     });
 
     // If we got instructions and they're from an external source, store them
-    if (instructions && instructions.provenance.source_domain !== 'normalized') {
-      const supabase = await createClient();
-      
+    if (instructions && instructions.provenance !== 'normalized') {
       // Store in database for future use
-      await storeInstructionsInDB(recipe.id, instructions, supabase);
+      await storeInstructionsInDB(recipe.id, instructions);
       
       // Update the recipe with the ingested steps
       return {
         ...recipe,
-        steps: instructions.steps,
+        steps: instructions.steps || [],
       };
     }
 
@@ -71,7 +69,7 @@ export async function ingestInstructionsMirror(
       });
 
       if (instructions) {
-        await storeInstructionsInDB(recipe.id, instructions, supabase);
+        await storeInstructionsInDB(recipe.id, instructions);
         console.log(`Ingested instructions for recipe ${recipe.id}`);
       }
     } catch (error) {

@@ -46,14 +46,14 @@ const domainRateLimits = new Map<string, number>();
 const RATE_LIMIT_MS = 1000; // 1 request per second per domain
 
 interface CachedInstructions {
-  steps: string[];
+  steps: RecipeStep[];
   provenance: string;
   attribution: string;
   cachedAt: number;
 }
 
 interface InstructionResult {
-  steps: string[] | null;
+  steps: RecipeStep[] | null;
   provenance: string;
   attribution: string;
   allowed: boolean;
@@ -124,24 +124,24 @@ async function checkRateLimit(domain: string): Promise<boolean> {
  * Parse instructions from external recipe data
  */
 async function parseInstructions(
-  recipeData: any,
+  recipeData: Record<string, unknown>,
   sourceUrl?: string
-): Promise<string[]> {
-  const steps: string[] = [];
+): Promise<RecipeStep[]> {
+  const steps: RecipeStep[] = [];
   
   // Try different common instruction formats
   if (recipeData.instructions) {
     if (Array.isArray(recipeData.instructions)) {
       // Array of instruction objects
-      for (const inst of recipeData.instructions) {
+      for (const inst of recipeData.instructions as any[]) {
         if (typeof inst === 'string') {
-          steps.push(sanitizeStep(inst));
+          steps.push({ text: sanitizeStep(inst) });
         } else if (inst.text) {
-          steps.push(sanitizeStep(inst.text));
+          steps.push({ text: sanitizeStep(inst.text), timer_seconds: inst.timer_seconds || null });
         } else if (inst.name) {
-          steps.push(sanitizeStep(inst.name));
+          steps.push({ text: sanitizeStep(inst.name) });
         } else if (inst.step) {
-          steps.push(sanitizeStep(inst.step));
+          steps.push({ text: sanitizeStep(inst.step) });
         }
       }
     } else if (typeof recipeData.instructions === 'string') {
@@ -153,7 +153,7 @@ async function parseInstructions(
       for (const step of rawSteps) {
         const sanitized = sanitizeStep(step);
         if (sanitized.length > 10) { // Filter out very short non-steps
-          steps.push(sanitized);
+          steps.push({ text: sanitized });
         }
       }
     }
@@ -161,11 +161,11 @@ async function parseInstructions(
   
   // Try analyzedInstructions (Spoonacular format)
   if (recipeData.analyzedInstructions && Array.isArray(recipeData.analyzedInstructions)) {
-    for (const section of recipeData.analyzedInstructions) {
+    for (const section of recipeData.analyzedInstructions as any[]) {
       if (section.steps && Array.isArray(section.steps)) {
         for (const step of section.steps) {
           if (step.step) {
-            steps.push(sanitizeStep(step.step));
+            steps.push({ text: sanitizeStep(step.step) });
           }
         }
       }
@@ -175,15 +175,16 @@ async function parseInstructions(
   // Try method field
   if (recipeData.method) {
     if (Array.isArray(recipeData.method)) {
-      for (const step of recipeData.method) {
-        steps.push(sanitizeStep(typeof step === 'string' ? step : step.text || ''));
+      for (const step of recipeData.method as any[]) {
+        const text = typeof step === 'string' ? step : step.text || '';
+        steps.push({ text: sanitizeStep(text), timer_seconds: typeof step === 'object' ? step.timer_seconds : null });
       }
     } else if (typeof recipeData.method === 'string') {
       const methodSteps = recipeData.method.split(/[\n\r]+/).filter(Boolean);
       for (const step of methodSteps) {
         const sanitized = sanitizeStep(step);
         if (sanitized.length > 10) {
-          steps.push(sanitized);
+          steps.push({ text: sanitized });
         }
       }
     }
@@ -191,21 +192,28 @@ async function parseInstructions(
   
   // Try directions field
   if (recipeData.directions && Array.isArray(recipeData.directions)) {
-    for (const dir of recipeData.directions) {
-      steps.push(sanitizeStep(typeof dir === 'string' ? dir : dir.text || ''));
+    for (const dir of recipeData.directions as any[]) {
+      const text = typeof dir === 'string' ? dir : dir.text || '';
+      steps.push({ text: sanitizeStep(text), timer_seconds: typeof dir === 'object' ? dir.timer_seconds : null });
     }
   }
   
-  return steps.filter(step => step.length > 0);
+  return steps.filter(step => step.text.length > 0);
 }
 
 /**
  * Ingest instructions with caching, throttling, and sanitization
  */
+// Type definitions
+export interface RecipeStep {
+  text: string;
+  timer_seconds?: number | null;
+}
+
 export async function ingestInstructions(
   sourceUrl: string | undefined,
   externalId: string | undefined,
-  recipeData: any
+  recipeData: Record<string, unknown>
 ): Promise<InstructionResult> {
   // Generate cache key
   const cacheKey = externalId || sourceUrl || JSON.stringify(recipeData).substring(0, 100);
@@ -288,4 +296,31 @@ export function getCacheStats() {
 export function clearCache() {
   instructionsCache.clear();
   domainRateLimits.clear();
+}
+
+/**
+ * Fetch instructions for a recipe (stub for server.ts compatibility)
+ */
+export async function fetchInstructionsForRecipe(params: {
+  recipe: Record<string, unknown>;
+  sourceUrl?: string;
+  externalId?: string;
+}): Promise<InstructionResult> {
+  return ingestInstructions(
+    params.sourceUrl,
+    params.externalId,
+    params.recipe
+  );
+}
+
+/**
+ * Store instructions in database (stub for server.ts compatibility)
+ */
+export async function storeInstructionsInDB(
+  recipeId: string,
+  instructions: InstructionResult
+): Promise<void> {
+  // This would store in Supabase - currently a no-op
+  // as instructions are handled differently in the app
+  console.log('Would store instructions for recipe:', recipeId);
 }

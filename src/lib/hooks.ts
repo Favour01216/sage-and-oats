@@ -120,7 +120,7 @@ export function useExternalRecipe({ idOrSlug }: { idOrSlug: string }) {
 
       try {
         // Try to fetch by ID first, then by slug if that fails
-        let response = await fetch(`/api/catalog/recipe/${idOrSlug}`);
+        const response = await fetch(`/api/catalog/recipe/${idOrSlug}`);
 
         if (!response.ok) {
           if (response.status === 404) {

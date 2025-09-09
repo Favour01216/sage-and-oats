@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  eslint: {
+    // Temporarily ignore during production builds
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       {

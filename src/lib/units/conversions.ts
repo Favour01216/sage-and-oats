@@ -237,7 +237,7 @@ export function convertToSystem(
   }
   
   // Round to sensible values
-  let finalValue = converted;
+  const finalValue = converted;
   
   // For US volume, prefer common measurements
   if (targetSystem === 'us' && currentUnit.type === 'volume') {

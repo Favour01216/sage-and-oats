@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { createClient } from "@/src/lib/supabase/client";
+import { getRecipeKey } from "@/src/lib/ids";
 
 interface HeartButtonProps {
   recipeId: string;
+  recipeSlug?: string;
   initialHearted?: boolean;
   initialCount?: number;
   className?: string;
@@ -15,6 +17,7 @@ interface HeartButtonProps {
 
 export function HeartButton({
   recipeId,
+  recipeSlug,
   initialHearted = false,
   initialCount = 0,
   className,
@@ -24,10 +27,14 @@ export function HeartButton({
   const [count, setCount] = useState(initialCount);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
+  
+  // Use stable key for hearts across LIVE/MIRROR modes
+  const stableKey = getRecipeKey({ id: recipeId, slug: recipeSlug });
 
   useEffect(() => {
     checkHeartStatus();
-  }, [recipeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stableKey]);
 
   async function checkHeartStatus() {
     const {
@@ -39,7 +46,7 @@ export function HeartButton({
       const { data } = await supabase
         .from("hearts")
         .select("id")
-        .eq("recipe_id", recipeId)
+        .eq("recipe_id", stableKey)
         .eq("user_id", user.id)
         .single();
 
@@ -49,13 +56,13 @@ export function HeartButton({
       const { count: totalCount } = await supabase
         .from("hearts")
         .select("*", { count: "exact", head: true })
-        .eq("recipe_id", recipeId);
+        .eq("recipe_id", stableKey);
 
       setCount(totalCount || 0);
     } else {
       // Anonymous users: check localStorage
       const localHearts = JSON.parse(localStorage.getItem("hearts") || "[]");
-      const isHearted = localHearts.includes(recipeId);
+      const isHearted = localHearts.includes(stableKey);
       setHearted(isHearted);
 
       // For anonymous users, show initial count plus their local heart
@@ -83,13 +90,13 @@ export function HeartButton({
           await supabase
             .from("hearts")
             .delete()
-            .eq("recipe_id", recipeId)
+            .eq("recipe_id", stableKey)
             .eq("user_id", user.id);
         } else {
           // Add heart
           await supabase
             .from("hearts")
-            .insert({ recipe_id: recipeId, user_id: user.id } as any);
+            .insert({ recipe_id: stableKey, user_id: user.id });
         }
       } else {
         // Anonymous users: save to localStorage
@@ -98,15 +105,15 @@ export function HeartButton({
         if (hearted) {
           // Remove heart
           const updatedHearts = localHearts.filter(
-            (id: string) => id !== recipeId
+            (id: string) => id !== stableKey
           );
           localStorage.setItem("hearts", JSON.stringify(updatedHearts));
           setHearted(false);
           setCount(Math.max(0, count - 1)); // Don't go below 0
         } else {
           // Add heart
-          if (!localHearts.includes(recipeId)) {
-            localHearts.push(recipeId);
+          if (!localHearts.includes(stableKey)) {
+            localHearts.push(stableKey);
             localStorage.setItem("hearts", JSON.stringify(localHearts));
           }
           setHearted(true);

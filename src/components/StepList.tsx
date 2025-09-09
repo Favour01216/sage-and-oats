@@ -27,9 +27,11 @@ export function StepList({
 }: StepListProps) {
   
   // Get attribution info for this recipe
-  const attribution = sourceUrl ? {
-    allowed: isDomainAllowed(sourceUrl),
-    sourceUrl
+  const isAllowed = sourceUrl ? isDomainAllowed(sourceUrl) : true;
+  const attribution = sourceUrl && !isAllowed ? {
+    needsAttribution: true,
+    attributionText: 'View full instructions at source',
+    sourceLink: sourceUrl
   } : null;
   
   // Check if this is just a link to external instructions
@@ -125,10 +127,10 @@ export function StepList({
       </ol>
 
       {/* Attribution bar if needed */}
-      {attribution.needsAttribution && (
+      {attribution?.needsAttribution && (
         <div className="mt-6">
           <AttributionBar
-            attributionText={attribution.attributionText!}
+            attributionText={attribution.attributionText}
             sourceLink={attribution.sourceLink}
           />
         </div>
