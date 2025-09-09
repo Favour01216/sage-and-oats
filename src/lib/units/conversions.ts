@@ -283,8 +283,10 @@ export function formatQuantity(
   const unitDisplay = unitObj ? unitObj.abbr : unit;
   
   // Special pluralization for cups
-  if (unit === 'cup' && value !== 1) {
-    return `${formatted} cups`;
+  if (unit === 'cup') {
+    // Only pluralize if value is greater than 1 (not for fractions like 3/4)
+    const needsPlural = value > 1;
+    return needsPlural ? `${formatted} cups` : `${formatted} cup`;
   }
   
   return `${formatted} ${unitDisplay}`;

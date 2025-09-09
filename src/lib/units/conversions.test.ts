@@ -78,8 +78,8 @@ describe('convertUnit', () => {
 describe('convertToSystem', () => {
   test('converts metric to US', () => {
     const result = convertToSystem(250, 'ml', 'us');
-    expect(result.value).toBeCloseTo(50.72, 0); // About 50 tsp
-    expect(result.unit).toBe('tsp');
+    expect(result.value).toBeCloseTo(1.06, 1); // About 1 cup (250ml ≈ 1.06 cups)
+    expect(result.unit).toBe('cup');
     
     const gToOz = convertToSystem(100, 'g', 'us');
     expect(gToOz.value).toBeCloseTo(3.527, 1);

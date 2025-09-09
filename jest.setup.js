@@ -1,13 +1,21 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// Set timezone for consistent test results
+process.env.TZ = 'America/Toronto';
+
 // Mock environment variables for tests
-process.env.NEXT_PUBLIC_SOURCE_MODE = 'live';
-process.env.NEXT_PUBLIC_ALGOLIA_APP_ID = 'test-app-id';
-process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME = 'test-index';
-process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_KEY = 'test-search-key';
-process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+process.env.NEXT_PUBLIC_SOURCE_MODE = process.env.NEXT_PUBLIC_SOURCE_MODE ?? 'mirror';
+process.env.SOURCE_MODE = process.env.SOURCE_MODE ?? 'mirror';
+process.env.NEXT_PUBLIC_ALGOLIA_APP_ID = 'test';
+process.env.NEXT_PUBLIC_ALGOLIA_INDEX = 'test_index';
+process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME = 'test_index';
+process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_KEY = 'search_test_key';
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'test_service_role';
+process.env.EDAMAM_APP_ID = 'test_edamam';
+process.env.EDAMAM_APP_KEY = 'test_edamam_key';
 
 // Mock localStorage
 const localStorageMock = {
