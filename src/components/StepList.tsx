@@ -2,7 +2,7 @@
 
 import { ExternalLink, Clock, BookOpen } from 'lucide-react'
 import { cn } from '@/src/lib/utils'
-import { getAttributionInfo } from '@/src/lib/instructions/ingest'
+import { isDomainAllowed } from '@/src/lib/instructions/ingest'
 import { AttributionBar } from './AttributionBar'
 
 interface Step {
@@ -27,7 +27,10 @@ export function StepList({
 }: StepListProps) {
   
   // Get attribution info for this recipe
-  const attribution = getAttributionInfo(sourceUrl);
+  const attribution = sourceUrl ? {
+    allowed: isDomainAllowed(sourceUrl),
+    sourceUrl
+  } : null;
   
   // Check if this is just a link to external instructions
   const hasOnlyExternalLink = steps.length === 1 && 

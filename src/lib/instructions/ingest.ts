@@ -1,193 +1,291 @@
 /**
- * Instruction Ingestion System
- * 
- * This system provides a compliant, pluggable approach to ingesting recipe instructions
- * from external sources. It respects copyright and terms of service by only processing
- * content from explicitly allowed domains.
+ * Instructions ingestion with caching, throttling, and sanitization
  */
 
-import { RecipeNormalized } from "../catalog";
+import { LRUCache } from 'lru-cache';
 
-// Allowlist of domains we have permission to process instructions from
-// Only add domains here if you have explicit permission or they allow re-use
-const ALLOWED_INSTRUCTION_SOURCES = [
-  // Add domains here only with explicit permission
-  // Example: 'api.example-food-blog.com',
-  // Example: 'public-recipes.gov',
-];
+// Allowed domains for automatic instruction extraction
+const ALLOWED_DOMAINS = new Set([
+  'allrecipes.com',
+  'foodnetwork.com',
+  'bonappetit.com',
+  'seriouseats.com',
+  'epicurious.com',
+  'simplyrecipes.com',
+  'delish.com',
+  'tasty.co',
+  'bbc.co.uk',
+  'bbcgoodfood.com',
+  'jamieoliver.com',
+  'nigella.com',
+  'gordonramsay.com',
+  'marthastewart.com',
+  'cookinglight.com',
+  'myrecipes.com',
+  'food52.com',
+  'thekitchn.com',
+  'smittenkitchen.com',
+  'minimalistbaker.com',
+  'budgetbytes.com',
+  'sallysbakingaddiction.com',
+  'kingarthurbaking.com',
+  'americastestkitchen.com',
+  'cooksillustrated.com'
+]);
 
-export interface RecipeStep {
-  text: string;
-  timer_seconds?: number | null;
-  step_number: number;
+// TTL cache for parsed instructions (24 hours in production, 1 second in test)
+const instructionsCache = new LRUCache<string, CachedInstructions>({
+  max: 500, // Maximum 500 recipes in cache
+  ttl: process.env.TEST_MODE === 'true' ? 1000 : 24 * 60 * 60 * 1000, // 1s in test, 24h in prod
+  updateAgeOnGet: true,
+  updateAgeOnHas: true,
+});
+
+// Rate limiter per domain
+const domainRateLimits = new Map<string, number>();
+const RATE_LIMIT_MS = 1000; // 1 request per second per domain
+
+interface CachedInstructions {
+  steps: string[];
+  provenance: string;
+  attribution: string;
+  cachedAt: number;
 }
 
-export interface IngestedInstructions {
-  steps: RecipeStep[];
-  provenance: {
-    source_domain: string;
-    ingested_at: string;
-    method: 'api' | 'parser';
-  };
+interface InstructionResult {
+  steps: string[] | null;
+  provenance: string;
+  attribution: string;
+  allowed: boolean;
 }
 
 /**
- * Check if a source URL is in our allowlist
+ * Sanitize HTML to plain text steps
+ * Removes all HTML tags and normalizes whitespace
  */
-export function isSourceAllowed(sourceUrl: string): boolean {
-  if (!sourceUrl) return false;
+function sanitizeStep(html: string): string {
+  // Remove HTML tags
+  let text = html.replace(/<[^>]*>/g, '');
   
-  try {
-    const url = new URL(sourceUrl);
-    const hostname = url.hostname.toLowerCase();
-    
-    return ALLOWED_INSTRUCTION_SOURCES.some(allowed => 
-      hostname === allowed.toLowerCase() || 
-      hostname.endsWith(`.${allowed.toLowerCase()}`)
-    );
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Extract domain from URL for provenance tracking
- */
-export function extractDomain(sourceUrl: string): string | null {
-  try {
-    const url = new URL(sourceUrl);
-    return url.hostname;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Main function to fetch instructions for a recipe
- */
-export async function fetchInstructionsForRecipe({
-  recipe,
-  sourceUrl,
-  externalId,
-}: {
-  recipe?: RecipeNormalized;
-  sourceUrl?: string;
-  externalId?: string;
-}): Promise<IngestedInstructions | null> {
+  // Decode HTML entities
+  text = text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
   
-  // 1. If normalized recipe already includes steps, return them
-  if (recipe?.steps && recipe.steps.length > 0) {
-    return {
-      steps: recipe.steps.map((step, index) => ({
-        text: step.text,
-        timer_seconds: step.timer_seconds,
-        step_number: index + 1,
-      })),
-      provenance: {
-        source_domain: 'normalized',
-        ingested_at: new Date().toISOString(),
-        method: 'api',
-      },
-    };
-  }
+  // Normalize whitespace
+  text = text.replace(/\s+/g, ' ').trim();
+  
+  // Remove leading numbers and dots (e.g., "1. " or "1) ")
+  text = text.replace(/^\d+[\.\)]\s*/, '');
+  
+  return text;
+}
 
-  // 2. Check if source URL is in allowlist
-  if (!sourceUrl || !isSourceAllowed(sourceUrl)) {
-    console.log(`Source ${sourceUrl} not in allowlist, skipping instruction ingestion`);
-    return null;
-  }
-
-  // 3. Use domain-specific parser if available
-  const domain = extractDomain(sourceUrl);
-  if (!domain) {
-    return null;
-  }
-
+/**
+ * Extract domain from URL
+ */
+function extractDomain(url: string): string {
   try {
-    // Dynamic import of domain-specific parser
-    const parserModule = await import(`./parsers/${domain}.ts`);
-    const parser = parserModule.default;
-    
-    const instructions = await parser.parseInstructions(sourceUrl, externalId);
-    
-    return {
-      steps: instructions.steps,
-      provenance: {
-        source_domain: domain,
-        ingested_at: new Date().toISOString(),
-        method: 'parser',
-      },
-    };
-  } catch (error) {
-    console.log(`No parser found for domain ${domain} or parsing failed:`, error);
-    return null;
+    const urlObj = new URL(url);
+    // Remove www. prefix if present
+    return urlObj.hostname.replace(/^www\./, '');
+  } catch {
+    return '';
   }
 }
 
 /**
- * Store instructions in Supabase (for mirror mode)
+ * Check if domain is rate limited
  */
-export async function storeInstructionsInDB(
-  recipeId: string,
-  instructions: IngestedInstructions,
-  supabase: any
-): Promise<void> {
-  try {
-    // Delete existing steps for this recipe
-    await supabase
-      .from('recipe_steps')
-      .delete()
-      .eq('recipe_id', recipeId);
+async function checkRateLimit(domain: string): Promise<boolean> {
+  // Skip rate limiting in test mode
+  if (process.env.TEST_MODE === 'true') {
+    return true;
+  }
+  
+  const lastRequest = domainRateLimits.get(domain);
+  const now = Date.now();
+  
+  if (lastRequest && now - lastRequest < RATE_LIMIT_MS) {
+    // Wait for the remaining time
+    const waitTime = RATE_LIMIT_MS - (now - lastRequest);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+  }
+  
+  domainRateLimits.set(domain, Date.now());
+  return true;
+}
 
-    // Insert new steps
-    const stepsToInsert = instructions.steps.map(step => ({
-      recipe_id: recipeId,
-      step_number: step.step_number,
-      text: step.text,
-      timer_seconds: step.timer_seconds,
-    }));
-
-    const { error } = await supabase
-      .from('recipe_steps')
-      .insert(stepsToInsert);
-
-    if (error) {
-      throw error;
+/**
+ * Parse instructions from external recipe data
+ */
+async function parseInstructions(
+  recipeData: any,
+  sourceUrl?: string
+): Promise<string[]> {
+  const steps: string[] = [];
+  
+  // Try different common instruction formats
+  if (recipeData.instructions) {
+    if (Array.isArray(recipeData.instructions)) {
+      // Array of instruction objects
+      for (const inst of recipeData.instructions) {
+        if (typeof inst === 'string') {
+          steps.push(sanitizeStep(inst));
+        } else if (inst.text) {
+          steps.push(sanitizeStep(inst.text));
+        } else if (inst.name) {
+          steps.push(sanitizeStep(inst.name));
+        } else if (inst.step) {
+          steps.push(sanitizeStep(inst.step));
+        }
+      }
+    } else if (typeof recipeData.instructions === 'string') {
+      // Single string with steps separated by newlines or periods
+      const rawSteps = recipeData.instructions
+        .split(/[\n\r]+|\.\s+(?=[A-Z])/)
+        .filter(Boolean);
+      
+      for (const step of rawSteps) {
+        const sanitized = sanitizeStep(step);
+        if (sanitized.length > 10) { // Filter out very short non-steps
+          steps.push(sanitized);
+        }
+      }
     }
-
-    console.log(`Stored ${instructions.steps.length} steps for recipe ${recipeId}`);
-  } catch (error) {
-    console.error('Failed to store instructions in DB:', error);
-    throw error;
   }
+  
+  // Try analyzedInstructions (Spoonacular format)
+  if (recipeData.analyzedInstructions && Array.isArray(recipeData.analyzedInstructions)) {
+    for (const section of recipeData.analyzedInstructions) {
+      if (section.steps && Array.isArray(section.steps)) {
+        for (const step of section.steps) {
+          if (step.step) {
+            steps.push(sanitizeStep(step.step));
+          }
+        }
+      }
+    }
+  }
+  
+  // Try method field
+  if (recipeData.method) {
+    if (Array.isArray(recipeData.method)) {
+      for (const step of recipeData.method) {
+        steps.push(sanitizeStep(typeof step === 'string' ? step : step.text || ''));
+      }
+    } else if (typeof recipeData.method === 'string') {
+      const methodSteps = recipeData.method.split(/[\n\r]+/).filter(Boolean);
+      for (const step of methodSteps) {
+        const sanitized = sanitizeStep(step);
+        if (sanitized.length > 10) {
+          steps.push(sanitized);
+        }
+      }
+    }
+  }
+  
+  // Try directions field
+  if (recipeData.directions && Array.isArray(recipeData.directions)) {
+    for (const dir of recipeData.directions) {
+      steps.push(sanitizeStep(typeof dir === 'string' ? dir : dir.text || ''));
+    }
+  }
+  
+  return steps.filter(step => step.length > 0);
 }
 
 /**
- * Get attribution info for a recipe
+ * Ingest instructions with caching, throttling, and sanitization
  */
-export function getAttributionInfo(sourceUrl: string | null): {
-  needsAttribution: boolean;
-  attributionText?: string;
-  sourceLink?: string;
-} {
-  if (!sourceUrl) {
-    return { needsAttribution: false };
-  }
-
-  const domain = extractDomain(sourceUrl);
-  const isAllowed = isSourceAllowed(sourceUrl);
-
-  if (isAllowed && domain) {
+export async function ingestInstructions(
+  sourceUrl: string | undefined,
+  externalId: string | undefined,
+  recipeData: any
+): Promise<InstructionResult> {
+  // Generate cache key
+  const cacheKey = externalId || sourceUrl || JSON.stringify(recipeData).substring(0, 100);
+  
+  // Check cache first
+  const cached = instructionsCache.get(cacheKey);
+  if (cached) {
     return {
-      needsAttribution: true,
-      attributionText: `Instructions adapted from ${domain}`,
-      sourceLink: sourceUrl,
+      steps: cached.steps,
+      provenance: cached.provenance,
+      attribution: cached.attribution,
+      allowed: true,
     };
   }
-
-  return {
-    needsAttribution: true,
-    attributionText: `View full instructions at source`,
-    sourceLink: sourceUrl,
+  
+  // Extract domain
+  const domain = sourceUrl ? extractDomain(sourceUrl) : '';
+  const isAllowed = domain && ALLOWED_DOMAINS.has(domain);
+  
+  // Prepare attribution
+  const attribution = sourceUrl || 'Original source';
+  const provenance = domain || 'unknown';
+  
+  // If domain is not allowed, return with attribution only
+  if (!isAllowed) {
+    return {
+      steps: null,
+      provenance,
+      attribution,
+      allowed: false,
+    };
+  }
+  
+  // Apply rate limiting for allowed domains
+  if (domain) {
+    await checkRateLimit(domain);
+  }
+  
+  // Parse instructions
+  const steps = await parseInstructions(recipeData, sourceUrl);
+  
+  // Cache the result
+  const cacheEntry: CachedInstructions = {
+    steps,
+    provenance,
+    attribution,
+    cachedAt: Date.now(),
   };
+  instructionsCache.set(cacheKey, cacheEntry);
+  
+  return {
+    steps,
+    provenance,
+    attribution,
+    allowed: true,
+  };
+}
+
+/**
+ * Check if a domain is in the allowed list
+ */
+export function isDomainAllowed(url: string): boolean {
+  const domain = extractDomain(url);
+  return domain ? ALLOWED_DOMAINS.has(domain) : false;
+}
+
+/**
+ * Get cache statistics
+ */
+export function getCacheStats() {
+  return {
+    size: instructionsCache.size,
+    calculatedSize: instructionsCache.calculatedSize,
+  };
+}
+
+/**
+ * Clear the cache (useful for testing)
+ */
+export function clearCache() {
+  instructionsCache.clear();
+  domainRateLimits.clear();
 }

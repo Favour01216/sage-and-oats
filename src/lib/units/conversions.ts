@@ -1,372 +1,319 @@
 /**
- * Comprehensive unit conversion system for cooking
- * 
- * This system provides conversions between US and metric units,
- * including density-based conversions for common ingredients.
+ * Unit conversion utilities for US ↔ Metric systems
+ * Includes accurate density tables for common ingredients
  */
 
+import { formatMixedFraction } from '../fraction-utils';
+
+// Unit types
 export type UnitSystem = 'us' | 'metric';
-export type UnitType = 'volume' | 'weight' | 'temperature' | 'length';
 
-// Volume conversions (US to ml)
-const VOLUME_CONVERSIONS: Record<string, number> = {
-  // Teaspoons and tablespoons
-  'tsp': 4.929,
-  'teaspoon': 4.929,
-  'teaspoons': 4.929,
-  'tbsp': 14.787,
-  'tablespoon': 14.787,
-  'tablespoons': 14.787,
+export interface Unit {
+  name: string;
+  abbr: string;
+  system: UnitSystem;
+  type: 'volume' | 'weight' | 'count';
+  toBase: number; // Conversion factor to base unit (ml for volume, g for weight)
+}
+
+// Volume units (base: milliliters)
+const VOLUME_UNITS: Record<string, Unit> = {
+  // Metric
+  ml: { name: 'milliliter', abbr: 'ml', system: 'metric', type: 'volume', toBase: 1 },
+  l: { name: 'liter', abbr: 'l', system: 'metric', type: 'volume', toBase: 1000 },
   
-  // Cups and fluid ounces
-  'cup': 240, // Using 240ml for easier cooking conversions
-  'cups': 240,
-  'fl oz': 30, // Rounded for easier cooking
-  'fluid ounce': 30,
-  'fluid ounces': 30,
-  'fl. oz': 30,
-  
-  // Larger volumes
-  'pint': 473,
-  'pints': 473,
-  'pt': 473,
-  'quart': 946,
-  'quarts': 946,
-  'qt': 946,
-  'gallon': 3785,
-  'gallons': 3785,
-  'gal': 3785,
+  // US
+  tsp: { name: 'teaspoon', abbr: 'tsp', system: 'us', type: 'volume', toBase: 4.92892 },
+  tbsp: { name: 'tablespoon', abbr: 'tbsp', system: 'us', type: 'volume', toBase: 14.7868 },
+  floz: { name: 'fluid ounce', abbr: 'fl oz', system: 'us', type: 'volume', toBase: 29.5735 },
+  cup: { name: 'cup', abbr: 'cup', system: 'us', type: 'volume', toBase: 236.588 },
+  pint: { name: 'pint', abbr: 'pt', system: 'us', type: 'volume', toBase: 473.176 },
+  quart: { name: 'quart', abbr: 'qt', system: 'us', type: 'volume', toBase: 946.353 },
+  gallon: { name: 'gallon', abbr: 'gal', system: 'us', type: 'volume', toBase: 3785.41 },
 };
 
-// Weight conversions (US to grams)
-const WEIGHT_CONVERSIONS: Record<string, number> = {
-  'oz': 28.35,
-  'ounce': 28.35,
-  'ounces': 28.35,
-  'lb': 453.6,
-  'lbs': 453.6,
-  'pound': 453.6,
-  'pounds': 453.6,
+// Weight units (base: grams)
+const WEIGHT_UNITS: Record<string, Unit> = {
+  // Metric
+  mg: { name: 'milligram', abbr: 'mg', system: 'metric', type: 'weight', toBase: 0.001 },
+  g: { name: 'gram', abbr: 'g', system: 'metric', type: 'weight', toBase: 1 },
+  kg: { name: 'kilogram', abbr: 'kg', system: 'metric', type: 'weight', toBase: 1000 },
+  
+  // US
+  oz: { name: 'ounce', abbr: 'oz', system: 'us', type: 'weight', toBase: 28.3495 },
+  lb: { name: 'pound', abbr: 'lb', system: 'us', type: 'weight', toBase: 453.592 },
 };
 
-/**
- * Ingredient density table for volume ↔ weight conversions
- * Values are grams per cup (240ml)
- */
-const INGREDIENT_DENSITIES: Record<string, number> = {
+// Density table for common ingredients (grams per cup)
+const DENSITY_TABLE: Record<string, number> = {
   // Flours
-  'flour': 120,
   'all-purpose flour': 120,
-  'plain flour': 120,
-  'ap flour': 120,
+  'flour': 120,
   'bread flour': 127,
-  'cake flour': 110,
-  'whole wheat flour': 113,
+  'cake flour': 114,
+  'whole wheat flour': 128,
   'almond flour': 96,
-  'coconut flour': 112,
+  'coconut flour': 128,
   
   // Sugars
-  'sugar': 200,
   'granulated sugar': 200,
+  'sugar': 200,
   'white sugar': 200,
-  'cane sugar': 200,
-  'brown sugar': 220, // packed
-  'light brown sugar': 220,
-  'dark brown sugar': 220,
+  'brown sugar': 220,
+  'packed brown sugar': 220,
   'powdered sugar': 120,
-  'confectioner\'s sugar': 120,
-  'icing sugar': 120,
+  'confectioners sugar': 120,
+  'honey': 340,
+  'maple syrup': 322,
+  'corn syrup': 328,
   
   // Fats
   'butter': 227,
-  'margarine': 227,
-  'shortening': 191,
   'oil': 218,
   'vegetable oil': 218,
   'olive oil': 216,
   'coconut oil': 218,
+  'shortening': 191,
   
   // Dairy
-  'milk': 240,
-  'heavy cream': 240,
-  'sour cream': 240,
+  'milk': 245,
+  'whole milk': 245,
+  'cream': 242,
+  'heavy cream': 238,
+  'sour cream': 230,
   'yogurt': 245,
-  'cream cheese': 232,
+  'greek yogurt': 285,
   
-  // Nuts and seeds
-  'almonds': 143,
-  'walnuts': 117,
-  'pecans': 109,
-  'pine nuts': 135,
-  'sesame seeds': 144,
-  'sunflower seeds': 140,
-  
-  // Grains and legumes
+  // Others
+  'water': 237,
+  'cocoa powder': 85,
+  'chocolate chips': 170,
+  'oats': 80,
+  'rolled oats': 80,
   'rice': 185,
-  'quinoa': 173,
-  'oats': 81,
-  'rolled oats': 81,
-  'breadcrumbs': 108,
-  
-  // Cocoa and chocolate
-  'cocoa powder': 75,
-  'chocolate chips': 175,
-  
-  // Common ingredients
-  'salt': 292,
-  'baking powder': 192,
-  'baking soda': 220,
-  'vanilla': 240, // liquid
-  'honey': 336,
-  'maple syrup': 322,
-  'molasses': 337,
+  'salt': 288,
+  'baking soda': 230,
+  'baking powder': 230,
+  'yeast': 142,
+  'cornstarch': 128,
+  'peanut butter': 258,
+  'jam': 320,
+  'nuts': 120,
+  'chopped nuts': 120,
+  'raisins': 145,
 };
 
 /**
- * Get the canonical ingredient name for density lookup
+ * Get density for an ingredient
+ * @param ingredient - Ingredient name
+ * @returns Grams per cup, or null if not found
  */
-function getCanonicalIngredient(ingredient: string): string {
-  const lower = ingredient.toLowerCase().trim();
+export function getIngredientDensity(ingredient: string): number | null {
+  const normalized = ingredient.toLowerCase().trim();
   
-  // Try exact match first
-  if (INGREDIENT_DENSITIES[lower]) {
-    return lower;
+  // Direct match
+  if (DENSITY_TABLE[normalized]) {
+    return DENSITY_TABLE[normalized];
   }
   
-  // Try partial matches
-  for (const key of Object.keys(INGREDIENT_DENSITIES)) {
-    if (lower.includes(key) || key.includes(lower)) {
-      return key;
+  // Try to find partial match
+  for (const [key, density] of Object.entries(DENSITY_TABLE)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return density;
     }
   }
   
-  // Default fallbacks based on common patterns
-  if (lower.includes('flour')) return 'flour';
-  if (lower.includes('sugar')) return 'sugar';
-  if (lower.includes('butter')) return 'butter';
-  if (lower.includes('oil')) return 'oil';
-  if (lower.includes('milk')) return 'milk';
-  
-  return lower;
+  return null;
 }
 
 /**
- * Convert volume to weight using ingredient density
+ * Convert between units
+ * @param value - The numeric value to convert
+ * @param fromUnit - Source unit
+ * @param toUnit - Target unit
+ * @param ingredient - Optional ingredient for density-based conversions
+ * @returns Converted value, or null if conversion not possible
  */
-export function volumeToWeight(
-  volumeInMl: number, 
-  ingredient: string
-): { grams: number; ingredient: string } | null {
-  const canonical = getCanonicalIngredient(ingredient);
-  const density = INGREDIENT_DENSITIES[canonical];
-  
-  if (!density) return null;
-  
-  // Density is grams per 240ml (1 cup)
-  const grams = (volumeInMl / 240) * density;
-  
-  return { grams: Math.round(grams * 10) / 10, ingredient: canonical };
-}
-
-/**
- * Convert weight to volume using ingredient density
- */
-export function weightToVolume(
-  grams: number, 
-  ingredient: string
-): { ml: number; ingredient: string } | null {
-  const canonical = getCanonicalIngredient(ingredient);
-  const density = INGREDIENT_DENSITIES[canonical];
-  
-  if (!density) return null;
-  
-  // Density is grams per 240ml (1 cup)
-  const ml = (grams / density) * 240;
-  
-  return { ml: Math.round(ml * 10) / 10, ingredient: canonical };
-}
-
-/**
- * Convert US unit to metric
- */
-export function convertToMetric(
-  quantity: number,
-  unit: string,
+export function convertUnit(
+  value: number,
+  fromUnit: string,
+  toUnit: string,
   ingredient?: string
-): { quantity: number; unit: string; converted: boolean } {
-  const lowerUnit = unit.toLowerCase();
+): number | null {
+  const from = VOLUME_UNITS[fromUnit] || WEIGHT_UNITS[fromUnit];
+  const to = VOLUME_UNITS[toUnit] || WEIGHT_UNITS[toUnit];
   
-  // Try volume conversion first
-  if (VOLUME_CONVERSIONS[lowerUnit]) {
-    const ml = quantity * VOLUME_CONVERSIONS[lowerUnit];
-    
-    // For large volumes, convert to liters
-    if (ml >= 1000) {
-      return {
-        quantity: Math.round(ml / 100) / 10, // Round to nearest 0.1L
-        unit: 'L',
-        converted: true
-      };
-    }
-    
-    return {
-      quantity: Math.round(ml * 10) / 10,
-      unit: 'ml',
-      converted: true
-    };
+  if (!from || !to) {
+    return null;
   }
   
-  // Try weight conversion
-  if (WEIGHT_CONVERSIONS[lowerUnit]) {
-    const grams = quantity * WEIGHT_CONVERSIONS[lowerUnit];
-    
-    // For large weights, convert to kg
-    if (grams >= 1000) {
-      return {
-        quantity: Math.round(grams / 100) / 10, // Round to nearest 0.1kg
-        unit: 'kg',
-        converted: true
-      };
-    }
-    
-    return {
-      quantity: Math.round(grams * 10) / 10,
-      unit: 'g',
-      converted: true
-    };
+  // Same unit
+  if (fromUnit === toUnit) {
+    return value;
   }
   
-  // If ingredient provided, try density-based conversion for volume units
-  if (ingredient && ['cup', 'cups'].includes(lowerUnit)) {
-    const weightResult = volumeToWeight(quantity * 240, ingredient);
-    if (weightResult) {
-      return {
-        quantity: weightResult.grams,
-        unit: 'g',
-        converted: true
-      };
+  // Same type conversion (volume to volume, weight to weight)
+  if (from.type === to.type) {
+    const baseValue = value * from.toBase;
+    return baseValue / to.toBase;
+  }
+  
+  // Volume to weight or weight to volume (needs density)
+  if (from.type !== to.type && ingredient) {
+    const density = getIngredientDensity(ingredient);
+    if (!density) {
+      return null;
+    }
+    
+    if (from.type === 'volume' && to.type === 'weight') {
+      // Convert volume to cups, then to grams using density
+      const cups = (value * from.toBase) / VOLUME_UNITS.cup.toBase;
+      const grams = cups * density;
+      return grams / to.toBase;
+    } else if (from.type === 'weight' && to.type === 'volume') {
+      // Convert weight to grams, then to cups using density
+      const grams = value * from.toBase;
+      const cups = grams / density;
+      return (cups * VOLUME_UNITS.cup.toBase) / to.toBase;
     }
   }
   
-  // No conversion available
-  return {
-    quantity,
-    unit,
-    converted: false
-  };
+  return null;
 }
 
 /**
- * Convert metric unit to US
+ * Convert a quantity to the target unit system
+ * @param value - Numeric value
+ * @param unit - Current unit
+ * @param targetSystem - Target unit system
+ * @param ingredient - Optional ingredient for density conversions
+ * @returns Object with converted value and unit
  */
-export function convertToUS(
-  quantity: number,
-  unit: string,
-  ingredient?: string
-): { quantity: number; unit: string; converted: boolean } {
-  const lowerUnit = unit.toLowerCase();
-  
-  // Convert from ml
-  if (lowerUnit === 'ml') {
-    // Prefer cups for larger volumes
-    if (quantity >= 240) {
-      return {
-        quantity: Math.round((quantity / 240) * 4) / 4, // Round to 1/4 cups
-        unit: 'cups',
-        converted: true
-      };
-    }
-    
-    // Use tablespoons for medium volumes
-    if (quantity >= 15) {
-      return {
-        quantity: Math.round((quantity / 14.787) * 4) / 4, // Round to 1/4 tbsp
-        unit: 'tbsp',
-        converted: true
-      };
-    }
-    
-    // Use teaspoons for small volumes
-    return {
-      quantity: Math.round((quantity / 4.929) * 4) / 4, // Round to 1/4 tsp
-      unit: 'tsp',
-      converted: true
-    };
-  }
-  
-  // Convert from liters
-  if (lowerUnit === 'l') {
-    const cups = quantity * (1000 / 240);
-    return {
-      quantity: Math.round(cups * 4) / 4,
-      unit: 'cups',
-      converted: true
-    };
-  }
-  
-  // Convert from grams
-  if (lowerUnit === 'g') {
-    // Try density-based conversion to volume if ingredient provided
-    if (ingredient) {
-      const volumeResult = weightToVolume(quantity, ingredient);
-      if (volumeResult && volumeResult.ml >= 15) { // Only convert if reasonable volume
-        const cups = volumeResult.ml / 240;
-        if (cups >= 0.25) {
-          return {
-            quantity: Math.round(cups * 4) / 4,
-            unit: 'cups',
-            converted: true
-          };
-        }
-      }
-    }
-    
-    // Fallback to weight conversion
-    if (quantity >= 454) { // About 1 pound
-      return {
-        quantity: Math.round((quantity / 453.6) * 4) / 4,
-        unit: 'lbs',
-        converted: true
-      };
-    }
-    
-    return {
-      quantity: Math.round((quantity / 28.35) * 4) / 4,
-      unit: 'oz',
-      converted: true
-    };
-  }
-  
-  // Convert from kg
-  if (lowerUnit === 'kg') {
-    const pounds = quantity * (1000 / 453.6);
-    return {
-      quantity: Math.round(pounds * 4) / 4,
-      unit: 'lbs',
-      converted: true
-    };
-  }
-  
-  // No conversion available
-  return {
-    quantity,
-    unit,
-    converted: false
-  };
-}
-
-/**
- * Convert between unit systems
- */
-export function convertUnits(
-  quantity: number,
+export function convertToSystem(
+  value: number,
   unit: string,
   targetSystem: UnitSystem,
   ingredient?: string
-): { quantity: number; unit: string; converted: boolean } {
-  if (targetSystem === 'metric') {
-    return convertToMetric(quantity, unit, ingredient);
-  } else {
-    return convertToUS(quantity, unit, ingredient);
+): { value: number; unit: string } {
+  const currentUnit = VOLUME_UNITS[unit] || WEIGHT_UNITS[unit];
+  
+  if (!currentUnit) {
+    return { value, unit };
   }
+  
+  // Already in target system
+  if (currentUnit.system === targetSystem) {
+    return { value, unit };
+  }
+  
+  // Define conversion targets
+  const conversionMap: Record<string, string> = {
+    // Metric to US
+    ml_us: 'tsp',
+    l_us: 'cup',
+    g_us: 'oz',
+    kg_us: 'lb',
+    
+    // US to Metric
+    tsp_metric: 'ml',
+    tbsp_metric: 'ml',
+    cup_metric: 'ml',
+    floz_metric: 'ml',
+    pint_metric: 'ml',
+    quart_metric: 'l',
+    gallon_metric: 'l',
+    oz_metric: 'g',
+    lb_metric: 'g',
+  };
+  
+  const targetUnit = conversionMap[`${unit}_${targetSystem}`];
+  if (!targetUnit) {
+    return { value, unit };
+  }
+  
+  const converted = convertUnit(value, unit, targetUnit, ingredient);
+  if (converted === null) {
+    return { value, unit };
+  }
+  
+  // Round to sensible values
+  let finalValue = converted;
+  
+  // For US volume, prefer common measurements
+  if (targetSystem === 'us' && currentUnit.type === 'volume') {
+    if (converted >= 48) { // >= 1 cup
+      const cups = converted / 48; // Convert tsp to cups
+      return { value: cups, unit: 'cup' };
+    } else if (converted >= 3) { // >= 1 tbsp
+      const tbsp = converted / 3; // Convert tsp to tbsp
+      return { value: tbsp, unit: 'tbsp' };
+    }
+  }
+  
+  // For metric, round to nice numbers
+  if (targetSystem === 'metric') {
+    if (targetUnit === 'ml' && finalValue >= 1000) {
+      return { value: finalValue / 1000, unit: 'l' };
+    } else if (targetUnit === 'g' && finalValue >= 1000) {
+      return { value: finalValue / 1000, unit: 'kg' };
+    }
+  }
+  
+  return { value: finalValue, unit: targetUnit };
+}
+
+/**
+ * Format a quantity with appropriate units and fractions
+ * @param value - Numeric value
+ * @param unit - Unit
+ * @param system - Unit system for formatting
+ * @returns Formatted string
+ */
+export function formatQuantity(
+  value: number,
+  unit: string,
+  system: UnitSystem
+): string {
+  // Use fractions for US measurements
+  const useFractions = system === 'us';
+  const formatted = useFractions ? formatMixedFraction(value) : value.toFixed(1).replace(/\.0$/, '');
+  
+  // Pluralize unit if needed
+  const unitObj = VOLUME_UNITS[unit] || WEIGHT_UNITS[unit];
+  const unitDisplay = unitObj ? unitObj.abbr : unit;
+  
+  // Special pluralization for cups
+  if (unit === 'cup') {
+    // Only pluralize if value is greater than 1 (not for fractions like 3/4)
+    const needsPlural = value > 1;
+    return needsPlural ? `${formatted} cups` : `${formatted} cup`;
+  }
+  
+  return `${formatted} ${unitDisplay}`;
+}
+
+/**
+ * Pipeline for scaling, converting, and formatting
+ * @param value - Original value
+ * @param unit - Original unit
+ * @param scaleFactor - Scaling factor
+ * @param targetSystem - Target unit system
+ * @param ingredient - Optional ingredient
+ * @returns Formatted string
+ */
+export function processQuantity(
+  value: number,
+  unit: string,
+  scaleFactor: number,
+  targetSystem: UnitSystem,
+  ingredient?: string
+): string {
+  // Step 1: Scale in original units (preferably metric for accuracy)
+  const scaled = value * scaleFactor;
+  
+  // Step 2: Convert to target system
+  const { value: converted, unit: targetUnit } = convertToSystem(scaled, unit, targetSystem, ingredient);
+  
+  // Step 3: Format with appropriate fractions
+  return formatQuantity(converted, targetUnit, targetSystem);
 }

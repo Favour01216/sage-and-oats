@@ -1,7 +1,7 @@
 // Ingredient parsing and unit conversion utilities
 
-import { formatQuantity, roundFriendly } from './fraction-utils';
-import { convertUnits } from './units/conversions';
+import { formatMixedFraction, roundToSensible } from './fraction-utils';
+import { convertToSystem, formatQuantity } from './units/conversions';
 
 export type ParsedIngredient = {
   originalText: string;
@@ -115,7 +115,7 @@ export function scaleIngredient(
   }
   
   const scaleFactor = targetServings / originalServings;
-  const scaledQuantity = roundFriendly(parsed.quantity * scaleFactor, parsed.unit);
+  const scaledQuantity = roundToSensible(parsed.quantity * scaleFactor);
   
   return {
     ...parsed,
@@ -134,20 +134,16 @@ export function convertIngredientUnits(
     return parsed;
   }
   
-  const result = convertUnits(
+  const result = convertToSystem(
     parsed.quantity, 
     parsed.unit, 
     targetSystem, 
     parsed.ingredient
   );
   
-  if (!result.converted) {
-    return parsed; // No conversion available
-  }
-  
   return {
     ...parsed,
-    quantity: result.quantity,
+    quantity: result.value,
     unit: result.unit
   };
 }
@@ -165,9 +161,11 @@ export function formatIngredient(
   
   if (converted.quantity && converted.unit) {
     const formattedQty = formatQuantity(converted.quantity, converted.unit, unitSystem);
-    result = `${formattedQty} ${converted.unit} ${converted.ingredient}`;
+    result = `${formattedQty} ${converted.ingredient}`;
   } else if (converted.quantity) {
-    const formattedQty = formatQuantity(converted.quantity, undefined, unitSystem);
+    const formattedQty = unitSystem === 'us' 
+      ? formatMixedFraction(converted.quantity)
+      : converted.quantity.toFixed(1).replace(/\.0$/, '');
     result = `${formattedQty} ${converted.ingredient}`;
   } else {
     result = converted.ingredient;
