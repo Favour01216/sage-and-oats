@@ -1,5 +1,8 @@
 // Ingredient parsing and unit conversion utilities
 
+import { formatQuantity, roundFriendly } from './fraction-utils';
+import { convertUnits } from './units/conversions';
+
 export type ParsedIngredient = {
   originalText: string;
   quantity?: number;
@@ -9,37 +12,6 @@ export type ParsedIngredient = {
 };
 
 export type UnitSystem = 'us' | 'metric';
-
-// Common unit conversions (US to Metric)
-const UNIT_CONVERSIONS: Record<string, { metric: string; factor: number }> = {
-  // Volume
-  'cup': { metric: 'ml', factor: 236.588 },
-  'cups': { metric: 'ml', factor: 236.588 },
-  'tbsp': { metric: 'ml', factor: 14.787 },
-  'tablespoon': { metric: 'ml', factor: 14.787 },
-  'tablespoons': { metric: 'ml', factor: 14.787 },
-  'tsp': { metric: 'ml', factor: 4.929 },
-  'teaspoon': { metric: 'ml', factor: 4.929 },
-  'teaspoons': { metric: 'ml', factor: 4.929 },
-  'fl oz': { metric: 'ml', factor: 29.574 },
-  'fluid ounce': { metric: 'ml', factor: 29.574 },
-  'fluid ounces': { metric: 'ml', factor: 29.574 },
-  'pint': { metric: 'ml', factor: 473.176 },
-  'pints': { metric: 'ml', factor: 473.176 },
-  'quart': { metric: 'ml', factor: 946.353 },
-  'quarts': { metric: 'ml', factor: 946.353 },
-  'gallon': { metric: 'l', factor: 3.785 },
-  'gallons': { metric: 'l', factor: 3.785 },
-  
-  // Weight
-  'lb': { metric: 'g', factor: 453.592 },
-  'lbs': { metric: 'g', factor: 453.592 },
-  'pound': { metric: 'g', factor: 453.592 },
-  'pounds': { metric: 'g', factor: 453.592 },
-  'oz': { metric: 'g', factor: 28.350 },
-  'ounce': { metric: 'g', factor: 28.350 },
-  'ounces': { metric: 'g', factor: 28.350 },
-};
 
 // Common measurement patterns
 const MEASUREMENT_REGEX = /^(\d+(?:\.\d+)?(?:\/\d+)?|\d+\/\d+)\s*([a-zA-Z\s]+?)\s+(.+?)(?:\s*,\s*(.+))?$/;
@@ -143,7 +115,7 @@ export function scaleIngredient(
   }
   
   const scaleFactor = targetServings / originalServings;
-  const scaledQuantity = parsed.quantity * scaleFactor;
+  const scaledQuantity = roundFriendly(parsed.quantity * scaleFactor, parsed.unit);
   
   return {
     ...parsed,
@@ -158,30 +130,25 @@ export function convertIngredientUnits(
   parsed: ParsedIngredient,
   targetSystem: UnitSystem
 ): ParsedIngredient {
-  if (!parsed.quantity || !parsed.unit || targetSystem === 'us') {
+  if (!parsed.quantity || !parsed.unit) {
     return parsed;
   }
   
-  const conversion = UNIT_CONVERSIONS[parsed.unit];
-  if (!conversion) {
+  const result = convertUnits(
+    parsed.quantity, 
+    parsed.unit, 
+    targetSystem, 
+    parsed.ingredient
+  );
+  
+  if (!result.converted) {
     return parsed; // No conversion available
   }
   
-  const convertedQuantity = parsed.quantity * conversion.factor;
-  
-  // Round to reasonable precision
-  const roundedQuantity = convertedQuantity >= 1000 && conversion.metric === 'ml' 
-    ? Math.round(convertedQuantity / 1000 * 10) / 10  // Convert to liters
-    : Math.round(convertedQuantity * 10) / 10;
-    
-  const finalUnit = convertedQuantity >= 1000 && conversion.metric === 'ml' ? 'l' : conversion.metric;
-  const finalQuantity = convertedQuantity >= 1000 && conversion.metric === 'ml' 
-    ? roundedQuantity : convertedQuantity;
-  
   return {
     ...parsed,
-    quantity: Math.round(finalQuantity * 10) / 10,
-    unit: finalUnit
+    quantity: result.quantity,
+    unit: result.unit
   };
 }
 
@@ -197,13 +164,10 @@ export function formatIngredient(
   let result = '';
   
   if (converted.quantity && converted.unit) {
-    // Format quantity nicely
-    const qty = converted.quantity;
-    const formattedQty = qty % 1 === 0 ? qty.toString() : qty.toFixed(1).replace(/\.0$/, '');
+    const formattedQty = formatQuantity(converted.quantity, converted.unit, unitSystem);
     result = `${formattedQty} ${converted.unit} ${converted.ingredient}`;
   } else if (converted.quantity) {
-    const qty = converted.quantity;
-    const formattedQty = qty % 1 === 0 ? qty.toString() : qty.toFixed(1).replace(/\.0$/, '');
+    const formattedQty = formatQuantity(converted.quantity, undefined, unitSystem);
     result = `${formattedQty} ${converted.ingredient}`;
   } else {
     result = converted.ingredient;

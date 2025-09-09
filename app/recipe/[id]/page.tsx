@@ -149,9 +149,9 @@ export default async function RecipePage({
     // Still get hearts from Supabase since that's local user data
     const supabase = await createClient();
     const { count: heartCount } = await supabase
-      .from("recipe_hearts")
+      .from("hearts")
       .select("*", { count: "exact", head: true })
-      .eq("recipe_uri", extRecipe.id);
+      .eq("recipe_id", extRecipe.id);
 
     // Calculate read time (rough estimate)
     const readTime = Math.ceil((extRecipe.total_minutes || 0) / 2);

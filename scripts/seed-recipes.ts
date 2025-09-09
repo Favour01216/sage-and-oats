@@ -1,22 +1,22 @@
-const { createClient } = require('@supabase/supabase-js')
-const { algoliasearch } = require('algoliasearch')
-require('dotenv').config({ path: '.env.local' })
+import { createClient } from '@supabase/supabase-js';
+import { algoliasearch } from 'algoliasearch';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
 // Initialize Algolia only if credentials are available
-let algoliaClient = null
-let recipesIndex = null
+let algoliaClient: any = null
 
 if (process.env.NEXT_PUBLIC_ALGOLIA_APP_ID && process.env.ALGOLIA_ADMIN_API_KEY) {
   algoliaClient = algoliasearch(
     process.env.NEXT_PUBLIC_ALGOLIA_APP_ID,
     process.env.ALGOLIA_ADMIN_API_KEY
   )
-  recipesIndex = algoliaClient.initIndex('recipes')
   console.log('✅ Algolia client initialized')
 } else {
   console.log('⚠️ Algolia credentials not found - skipping search indexing')
@@ -218,10 +218,10 @@ async function seedDatabase() {
   }
 
   // Index to Algolia if client is available
-  if (recipesIndex && algoliaRecords.length > 0) {
+  if (algoliaClient && algoliaRecords.length > 0) {
     console.log('Indexing recipes to Algolia...')
     try {
-      await recipesIndex.saveObjects(algoliaRecords)
+      await algoliaClient.saveObjects({ indexName: 'recipes', objects: algoliaRecords })
       console.log('Successfully indexed recipes to Algolia')
     } catch (error) {
       console.error('Error indexing to Algolia:', error)

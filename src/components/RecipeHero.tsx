@@ -1,6 +1,6 @@
 "use client";
-import Image from "next/image";
 import { getOptimizedImageProps } from "@/src/lib/image-optimization";
+import { SafeImage } from "./SafeImage";
 
 export default function RecipeHero({ src, alt }: { src: string; alt: string }) {
   // Check if this is an Edamam image with signed URL
@@ -10,14 +10,18 @@ export default function RecipeHero({ src, alt }: { src: string; alt: string }) {
     <div
       className="relative w-full h-[48vh] md:h-[60vh] overflow-hidden"
       style={{ height: "60vh" }} // fallback if Tailwind isn't active
+      data-testid="recipe-hero"
     >
       {isEdamamImage ? (
-        // For Edamam images, use a regular img tag to avoid Next.js optimization issues
-        <img
+        // For Edamam images, use SafeImage with unoptimized flag
+        <SafeImage
           src={src}
           alt={alt}
-          className="w-full h-full object-cover"
-          loading="eager" // Hero images should load immediately
+          fill
+          sizes="100vw"
+          priority
+          className="object-cover"
+          unoptimized
         />
       ) : (
         (() => {
@@ -29,7 +33,7 @@ export default function RecipeHero({ src, alt }: { src: string; alt: string }) {
           });
 
           return imageProps ? (
-            <Image {...imageProps} fill className="object-cover" />
+            <SafeImage {...imageProps} fill sizes="100vw" className="object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
               <div className="text-center text-gray-500">

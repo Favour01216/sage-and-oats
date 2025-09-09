@@ -62,7 +62,7 @@ export default async function AdminRecipesPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-muted">
-                  {formatTime(recipe.total_minutes)}
+                  {formatTime(recipe.total_minutes || 0)}
                 </td>
                 <td className="px-6 py-4 text-sm text-muted">
                   {new Date(recipe.created_at).toLocaleDateString()}
