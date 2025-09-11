@@ -5,14 +5,14 @@
 export type CardData = {
   id: string;
   slug: string;
-  title: string;          // always human-friendly (never a URL)
-  imageUrl?: string;      // always HTTPS
+  title: string; // always human-friendly (never a URL)
+  imageUrl?: string; // always HTTPS
   tags?: string[];
   total_minutes?: number;
-  hearts?: number;        // global saves count (optional in lists)
+  hearts?: number; // global saves count (optional in lists)
   rating?: number | null;
-  href: string;           // e.g., `/recipe/${slug}`
-  sourceHost?: string;    // for attribution tooltip if needed
+  href: string; // e.g., `/recipe/${slug}`
+  sourceHost?: string; // for attribution tooltip if needed
 };
 
 /**
@@ -33,22 +33,25 @@ export function ensureHttps(u?: string | null): string | undefined {
  * Clean up title to ensure it's human-readable
  * Falls back to domain name if title looks like a URL
  */
-export function cleanTitle(t?: string | null, sourceUrl?: string | null): string {
+export function cleanTitle(
+  t?: string | null,
+  sourceUrl?: string | null
+): string {
   // If we have a good title that's not a URL, use it
   if (t && !/^https?:\/\//i.test(t)) {
     return t;
   }
-  
+
   // Try to extract domain from sourceUrl as fallback
   if (sourceUrl) {
     try {
-      const hostname = new URL(sourceUrl).hostname.replace(/^www\./, '');
+      const hostname = new URL(sourceUrl).hostname.replace(/^www\./, "");
       return `Recipe from ${hostname}`;
     } catch {
       // Fall through to default
     }
   }
-  
+
   // Last resort fallback
   return "Recipe";
 }
@@ -57,23 +60,32 @@ export function cleanTitle(t?: string | null, sourceUrl?: string | null): string
  * Map search hit (from Algolia or API) to card data
  */
 export function mapHitToCard(hit: any): CardData {
-  const title = cleanTitle(hit.title || hit.label, hit.source_url || hit.sourceUrl);
-  const id = String(hit.id || hit.objectID || hit.slug || 'unknown');
-  const slug = String(hit.slug || hit.id || hit.objectID || 'unknown');
-  
+  const title = cleanTitle(
+    hit.title || hit.label,
+    hit.source_url || hit.sourceUrl
+  );
+  const id = String(hit.id || hit.objectID || hit.slug || "unknown");
+  const slug = String(hit.slug || hit.id || hit.objectID || "unknown");
+
   return {
     id,
     slug,
     title,
-    imageUrl: ensureHttps(hit.imageUrl || hit.image_url || hit.hero_image_url || hit.image),
+    imageUrl: ensureHttps(
+      hit.imageUrl || hit.image_url || hit.hero_image_url || hit.image
+    ),
     tags: Array.isArray(hit.tags) ? hit.tags : [],
     total_minutes: hit.total_minutes ?? hit.totalMinutes ?? undefined,
     hearts: hit.hearts ?? hit.heart_count ?? undefined,
     rating: hit.avg_rating ?? hit.rating ?? null,
-    href: `/recipe/${encodeURIComponent(slug)}`,
-    sourceHost: (hit.source_url || hit.sourceUrl) ? 
-      new URL(hit.source_url || hit.sourceUrl).hostname.replace(/^www\./, '') : 
-      undefined,
+    href: `/recipe/${encodeURIComponent(id)}`,
+    sourceHost:
+      hit.source_url || hit.sourceUrl
+        ? new URL(hit.source_url || hit.sourceUrl).hostname.replace(
+            /^www\./,
+            ""
+          )
+        : undefined,
   };
 }
 
