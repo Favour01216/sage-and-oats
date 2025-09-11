@@ -5,6 +5,8 @@ import { Search, Clock, Leaf, Zap, ChefHat } from "lucide-react";
 import { createClient } from "@/src/lib/supabase/server";
 import { searchRecipes } from "@/src/lib/external";
 import { normalizeExtRecipe } from "@/src/lib/catalog";
+import { mapNormalizedToCard, type CardData } from "@/src/lib/cards/mapToCard";
+import { SOURCE_MODE } from "@/src/lib/sourceMode";
 
 // Define types for our data
 interface Recipe {
@@ -25,50 +27,87 @@ interface Recipe {
 
 // Remove mock data - we'll fetch real data from Supabase
 
+// Cache the home page for 2 minutes
+export const revalidate = 120;
+
 export default async function Home() {
-  let typedRecipes: any[] = [];
-  let heartCounts: Record<string, number> = {};
+  let displayRecipes: CardData[] = [];
 
-  // LIVE mode: Get recipes from external API
-  try {
-    const result = await searchRecipes({ perPage: 8 });
-    const normalizedRecipes = result.items.map(normalizeExtRecipe);
-    typedRecipes = normalizedRecipes;
-
-    // Still get hearts from Supabase since that's user interaction data
-    if (typedRecipes.length > 0) {
+  if (SOURCE_MODE === "mirror") {
+    // MIRROR mode: Get recipes from Supabase
+    try {
       const supabase = await createClient();
-      const recipeIds = typedRecipes.map((r) => r.id);
-      const { data: hearts } = await supabase
-        .from("hearts")
-        .select("recipe_id")
-        .in("recipe_id", recipeIds);
+      
+      // Query recipes with heart counts
+      const { data: recipes, error } = await supabase
+        .from("recipes")
+        .select(`
+          id,
+          slug,
+          title,
+          image_url,
+          tags,
+          total_minutes,
+          avg_rating,
+          source_url
+        `)
+        .order("created_at", { ascending: false })
+        .limit(8);
 
-      heartCounts =
-        hearts?.reduce((acc: Record<string, number>, heart: any) => {
+      if (error) {
+        console.error("Failed to fetch recipes from Supabase:", error);
+      } else if (recipes) {
+        // Get heart counts for these recipes
+        const recipeIds = recipes.map((r) => r.id);
+        const { data: hearts } = await supabase
+          .from("hearts")
+          .select("recipe_id")
+          .in("recipe_id", recipeIds);
+
+        const heartCounts = hearts?.reduce((acc: Record<string, number>, heart: any) => {
           acc[heart.recipe_id] = (acc[heart.recipe_id] || 0) + 1;
           return acc;
         }, {} as Record<string, number>) || {};
-    }
-  } catch (error) {
-    console.error("Failed to fetch recipes from external API:", error);
-    // Fallback to empty array if external API fails
-    typedRecipes = [];
-  }
 
-  // Transform recipes to match RecipeCard component expectations
-  const displayRecipes =
-    typedRecipes.map((recipe) => ({
-      href: `/recipe/${encodeURIComponent(recipe.id)}`,
-      recipeId: recipe.id,
-      imageUrl:
-        recipe.imageUrl || recipe.hero_image_url || "/placeholder-recipe.jpg",
-      title: recipe.title,
-      tags: recipe.tags || [],
-      totalMinutes: recipe.total_minutes || 0,
-      hearts: heartCounts[recipe.id] || 0,
-      rating: recipe.avg_rating || 0,
-    })) || [];
+        // Map to card data
+        displayRecipes = recipes.map((recipe) => ({
+          ...mapNormalizedToCard(recipe),
+          hearts: heartCounts[recipe.id] || 0,
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch recipes:", error);
+    }
+  } else {
+    // LIVE mode: Get recipes from external API
+    try {
+      const result = await searchRecipes({ perPage: 8 });
+      const normalizedRecipes = result.items.map(normalizeExtRecipe);
+
+      // Get heart counts from Supabase
+      if (normalizedRecipes.length > 0) {
+        const supabase = await createClient();
+        const recipeIds = normalizedRecipes.map((r) => r.id);
+        const { data: hearts } = await supabase
+          .from("hearts")
+          .select("recipe_id")
+          .in("recipe_id", recipeIds);
+
+        const heartCounts = hearts?.reduce((acc: Record<string, number>, heart: any) => {
+          acc[heart.recipe_id] = (acc[heart.recipe_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>) || {};
+
+        // Map to card data
+        displayRecipes = normalizedRecipes.map((recipe) => ({
+          ...mapNormalizedToCard(recipe),
+          hearts: heartCounts[recipe.id] || 0,
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch recipes from external API:", error);
+    }
+  }
 
   return (
     <div className="min-h-screen">
@@ -199,9 +238,18 @@ export default async function Home() {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                 {displayRecipes.map((recipe, index) => (
                   <RecipeCard
-                    key={recipe.href}
-                    {...recipe}
+                    key={recipe.id}
+                    href={recipe.href}
+                    recipeId={recipe.id}
+                    recipeSlug={recipe.slug}
+                    imageUrl={recipe.imageUrl}
+                    title={recipe.title}
+                    tags={recipe.tags}
+                    totalMinutes={recipe.total_minutes}
+                    hearts={recipe.hearts}
+                    rating={recipe.rating || undefined}
                     className={index === 0 ? "md:col-span-2" : ""}
+                    priority={index < 4} // Priority for first 4 images
                   />
                 ))}
               </div>

@@ -33,6 +33,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "www.edamam.com",
       },
+      {
+        protocol: "http",
+        hostname: "www.edamam.com",
+      },
       // Add common external API image domains (customize based on your external API)
       {
         protocol: "https",

@@ -13,6 +13,7 @@ interface HeartButtonProps {
   initialCount?: number;
   className?: string;
   size?: "sm" | "md" | "lg";
+  showCount?: boolean;
 }
 
 export function HeartButton({
@@ -22,6 +23,7 @@ export function HeartButton({
   initialCount = 0,
   className,
   size = "md",
+  showCount = true,
 }: HeartButtonProps) {
   const [hearted, setHearted] = useState(initialHearted);
   const [count, setCount] = useState(initialCount);
@@ -167,11 +169,13 @@ export function HeartButton({
           hearted ? "fill-accent text-accent" : "text-muted"
         )}
       />
-      <span
-        className={cn("font-medium", hearted ? "text-accent" : "text-muted")}
-      >
-        {count}
-      </span>
+      {showCount && (
+        <span
+          className={cn("font-medium", hearted ? "text-accent" : "text-muted")}
+        >
+          {count}
+        </span>
+      )}
     </button>
   );
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock, Heart, Star } from "lucide-react";
+import { Clock, Star } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { SkeletonCard } from "./ui/Shimmer";
 import { getOptimizedImageProps } from "@/src/lib/image-optimization";
@@ -9,6 +9,7 @@ import { SafeImage } from "./SafeImage";
 interface RecipeCardProps {
   href: string;
   recipeId: string;
+  recipeSlug?: string;
   imageUrl?: string;
   title: string;
   tags?: string[];
@@ -16,11 +17,13 @@ interface RecipeCardProps {
   hearts?: number;
   rating?: number;
   className?: string;
+  priority?: boolean;
 }
 
 export default function RecipeCard({
   href,
   recipeId,
+  recipeSlug,
   imageUrl,
   title,
   tags = [],
@@ -28,7 +31,10 @@ export default function RecipeCard({
   hearts = 0,
   rating,
   className,
+  priority = false,
 }: RecipeCardProps) {
+  // Ensure HTTPS for images
+  const secureImageUrl = imageUrl?.replace(/^http:\/\//i, 'https://');
   return (
     <div
       className={cn(
@@ -39,43 +45,19 @@ export default function RecipeCard({
     >
       <Link href={href} className="block" aria-label={`Open recipe: ${title}`}>
         <div className="aspect-[4/3] md:aspect-[16/9] relative overflow-hidden">
-          {(() => {
-            // Check if this is an Edamam image with signed URL
-            const isEdamamImage = imageUrl?.includes(
-              "edamam-product-images.s3.amazonaws.com"
-            );
-
-            if (isEdamamImage && imageUrl) {
-              // For Edamam images, use SafeImage with unoptimized flag
-              return (
-                <SafeImage
-                  src={imageUrl}
-                  alt={title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  unoptimized
-                />
-              );
-            }
-
-            // For other images, use the optimization utility
-            const imageProps = getOptimizedImageProps(imageUrl, title, {
-              size: "large",
-              responsive: true,
-            });
-
-            return imageProps ? (
-              <SafeImage
-                {...imageProps}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
-            );
-          })()}
+          {secureImageUrl ? (
+            <SafeImage
+              src={secureImageUrl}
+              alt={title}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              priority={priority}
+              unoptimized={secureImageUrl.includes("edamam") || secureImageUrl.includes("amazonaws")}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
+          )}
 
           {/* Overlay gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -92,11 +74,6 @@ export default function RecipeCard({
                 </div>
               )}
 
-              <div className="flex items-center gap-1">
-                <Heart className="w-4 h-4" />
-                <span>{hearts}</span>
-              </div>
-
               {rating && (
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 fill-current" />
@@ -108,14 +85,24 @@ export default function RecipeCard({
         </div>
       </Link>
 
-      {/* Heart button overlay */}
+      {/* Heart button overlay with count badge */}
       <div className="absolute top-2 right-2 z-10">
         <HeartButton
           recipeId={recipeId}
+          recipeSlug={recipeSlug}
           initialCount={hearts}
           size="sm"
+          showCount={false}
           className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
         />
+        {hearts && hearts > 0 && (
+          <div 
+            className="absolute -bottom-1 -right-1 bg-accent text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center"
+            title={`Saved by ${hearts} ${hearts === 1 ? 'person' : 'people'}`}
+          >
+            {hearts}
+          </div>
+        )}
       </div>
 
       {/* Tags below image */}
