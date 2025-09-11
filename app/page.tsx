@@ -37,7 +37,7 @@ export default async function Home() {
     // MIRROR mode: Get recipes from Supabase
     try {
       const supabase = await createClient();
-      
+
       // Query recipes with heart counts
       const { data: recipes, error } = await supabase
         .from("recipes")
@@ -45,11 +45,10 @@ export default async function Home() {
           id,
           slug,
           title,
-          image_url,
+          hero_image_url,
           tags,
           total_minutes,
-          avg_rating,
-          source_url
+          avg_rating
         `)
         .order("created_at", { ascending: false })
         .limit(8);
@@ -87,7 +86,7 @@ export default async function Home() {
       // Get heart counts from Supabase
       if (normalizedRecipes.length > 0) {
         const supabase = await createClient();
-        const recipeIds = normalizedRecipes.map((r) => r.id);
+        const recipeIds = normalizedRecipes.map((r: any) => r.id);
         const { data: hearts } = await supabase
           .from("hearts")
           .select("recipe_id")
@@ -99,7 +98,7 @@ export default async function Home() {
         }, {} as Record<string, number>) || {};
 
         // Map to card data
-        displayRecipes = normalizedRecipes.map((recipe) => ({
+        displayRecipes = normalizedRecipes.map((recipe: any) => ({
           ...mapNormalizedToCard(recipe),
           hearts: heartCounts[recipe.id] || 0,
         }));

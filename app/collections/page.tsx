@@ -22,7 +22,7 @@ interface HeartedRecipe {
 
 async function getHeartCounts(recipeIds: string[]): Promise<Record<string, number>> {
   if (recipeIds.length === 0) return {};
-  
+
   const supabase = await createClient();
   const { data: hearts } = await supabase
     .from("hearts")
@@ -105,10 +105,10 @@ async function hydrateRecipe(
 
 export default async function CollectionsPage() {
   const supabase = await createClient();
-  
+
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   let heartedRecipes: HeartedRecipe[] = [];
   let recipes: CardData[] = [];
 
@@ -119,10 +119,7 @@ export default async function CollectionsPage() {
       .select(`
         id,
         recipe_id,
-        created_at,
-        title_snapshot,
-        image_url_snapshot,
-        source_url_snapshot
+        created_at
       `)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
@@ -140,13 +137,13 @@ export default async function CollectionsPage() {
   if (heartedRecipes.length > 0) {
     const recipeIds = heartedRecipes.map(h => h.recipe_id);
     const heartCounts = await getHeartCounts(recipeIds);
-    
+
     const hydratedRecipes = await Promise.all(
-      heartedRecipes.map(heart => 
+      heartedRecipes.map(heart =>
         hydrateRecipe(heart, heartCounts[heart.recipe_id] || 1)
       )
     );
-    
+
     recipes = hydratedRecipes.filter((r): r is CardData => r !== null);
   }
 
