@@ -6,7 +6,7 @@ import { addRequestId, logRequestStart, logRequestEnd } from "@/src/lib/middlewa
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
   const requestId = addRequestId(request);
-  
+
   logRequestStart(request, requestId);
 
   try {
@@ -25,19 +25,19 @@ export async function GET(request: NextRequest) {
 
     const response = ok(healthData);
     const duration = Date.now() - startTime;
-    
+
     logRequestEnd(request, requestId, 200, duration);
-    
+
     return response;
   } catch (error) {
     const duration = Date.now() - startTime;
-    logger.error(new Error("Health check failed"), {
+    logger.error("Health check failed", {
       requestId,
-      error,
+      error: error instanceof Error ? error : new Error(String(error)),
     });
-    
+
     logRequestEnd(request, requestId, 500, duration);
-    
+
     return ok({
       status: "unhealthy",
       timestamp: new Date().toISOString(),

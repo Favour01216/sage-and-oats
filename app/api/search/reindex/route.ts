@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       ingredients?.reduce(
         (acc, ing) => {
           if (!acc[ing.recipe_id]) acc[ing.recipe_id] = [];
-          acc[ing.recipe_id].push(ing.line_text);
+          acc[ing.recipe_id]!.push(ing.line_text);
           return acc;
         },
         {} as Record<string, string[]>,

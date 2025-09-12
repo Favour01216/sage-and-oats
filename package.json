@@ -38,6 +38,7 @@
     "algoliasearch": "^5.36.0",
     "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
+    "critters": "^0.0.25",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.1",
     "lru-cache": "^11.2.1",

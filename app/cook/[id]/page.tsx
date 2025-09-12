@@ -139,7 +139,7 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
         if (prev === null || prev <= 1) {
           // Timer finished
           const audio = new Audio("/timer-done.mp3");
-          audio.play().catch(() => {});
+          audio.play().catch(() => { });
           setTimerStartTime(null);
           saveState(currentStepIndex, completedSteps, null);
           return null;
@@ -224,6 +224,21 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
   const currentStep = steps[currentStepIndex];
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
 
+  if (!currentStep) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Step not found
+          </h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Please check the recipe steps.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background dark:bg-background-dark">
       {/* Header */}
@@ -266,11 +281,10 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
               <span className="text-5xl font-bold text-primary">{currentStep.step_number}</span>
               <button
                 onClick={handleToggleComplete}
-                className={`rounded-lg p-3 transition-colors ${
-                  completedSteps.has(currentStepIndex)
+                className={`rounded-lg p-3 transition-colors ${completedSteps.has(currentStepIndex)
                     ? "bg-primary text-white"
                     : "bg-muted/10 text-muted hover:bg-muted/20 dark:text-muted-dark"
-                }`}
+                  }`}
                 aria-label={
                   completedSteps.has(currentStepIndex) ? "Mark as incomplete" : "Mark as complete"
                 }
@@ -320,11 +334,10 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
               <button
                 onClick={handlePrevStep}
                 disabled={currentStepIndex === 0}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
-                  currentStepIndex === 0
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${currentStepIndex === 0
                     ? "cursor-not-allowed bg-muted/10 text-muted/50"
                     : "bg-muted/10 text-text hover:bg-muted/20 dark:text-text-dark"
-                }`}
+                  }`}
               >
                 <ChevronLeft className="h-5 w-5" />
                 Previous
@@ -335,13 +348,12 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
                   <button
                     key={index}
                     onClick={() => handleStepClick(index)}
-                    className={`h-2 w-2 rounded-full transition-colors ${
-                      index === currentStepIndex
+                    className={`h-2 w-2 rounded-full transition-colors ${index === currentStepIndex
                         ? "w-8 bg-primary"
                         : completedSteps.has(index)
                           ? "bg-primary/50"
                           : "bg-muted/30"
-                    }`}
+                      }`}
                     aria-label={`Go to step ${index + 1}`}
                   />
                 ))}

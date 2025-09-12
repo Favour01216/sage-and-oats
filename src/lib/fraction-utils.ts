@@ -97,20 +97,25 @@ export function parseFraction(str: string): number {
     }
     // Handle mixed unicode fractions like "1 ½"
     const mixedMatch = str.match(/^(\d+)\s*(.+)$/);
-    if (mixedMatch && mixedMatch[2] === frac) {
+    if (mixedMatch && mixedMatch[1] && mixedMatch[2] === frac) {
       return parseInt(mixedMatch[1]) + dec;
     }
   }
 
   // Handle regular fractions like "3/4"
   const fractionMatch = str.match(/^(\d+)\/(\d+)$/);
-  if (fractionMatch) {
+  if (fractionMatch && fractionMatch[1] && fractionMatch[2]) {
     return parseInt(fractionMatch[1]) / parseInt(fractionMatch[2]);
   }
 
   // Handle mixed fractions like "1 1/2" or "1-1/2"
   const mixedFractionMatch = str.match(/^(\d+)\s*[-\s]\s*(\d+)\/(\d+)$/);
-  if (mixedFractionMatch) {
+  if (
+    mixedFractionMatch &&
+    mixedFractionMatch[1] &&
+    mixedFractionMatch[2] &&
+    mixedFractionMatch[3]
+  ) {
     const whole = parseInt(mixedFractionMatch[1]);
     const numerator = parseInt(mixedFractionMatch[2]);
     const denominator = parseInt(mixedFractionMatch[3]);
@@ -136,6 +141,9 @@ export function scaleQuantity(quantity: string, scaleFactor: number): string {
   }
 
   const [, numberPart, unit] = match;
+  if (!numberPart) {
+    return quantity; // Return as-is if number part is undefined
+  }
   const value = parseFraction(numberPart);
   const scaledValue = value * scaleFactor;
 

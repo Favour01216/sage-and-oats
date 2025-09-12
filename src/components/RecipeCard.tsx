@@ -87,24 +87,16 @@ export default function RecipeCard({
         </div>
       </Link>
 
-      {/* Heart button overlay with count badge */}
+      {/* Heart button with integrated count */}
       <div className="absolute right-2 top-2 z-10">
         <HeartButton
           recipeId={recipeId}
           recipeSlug={recipeSlug}
           initialCount={hearts}
           size="sm"
-          showCount={false}
+          showCount={true}
           className="border-white/30 bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
         />
-        {hearts && hearts > 0 && (
-          <div
-            className="absolute -bottom-1 -right-1 min-w-[20px] rounded-full bg-accent px-1.5 py-0.5 text-center text-xs text-white"
-            title={`Saved by ${hearts} ${hearts === 1 ? "person" : "people"}`}
-          >
-            {hearts}
-          </div>
-        )}
       </div>
 
       {/* Tags below image */}

@@ -36,8 +36,8 @@ async function handleHeartPost(request: NextRequest) {
     }
 
     if (result.error) {
-      logger.error(new Error("Heart insert error"), {
-        requestId: request.headers.get("x-request-id"),
+      logger.error("Heart insert error", {
+        requestId: request.headers.get("x-request-id") || undefined,
         userId: user?.id,
         recipeId,
         error: result.error,

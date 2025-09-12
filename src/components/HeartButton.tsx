@@ -157,12 +157,15 @@ export function HeartButton({
       <Heart
         className={cn(
           sizeClasses[size],
-          "transition-all",
-          hearted ? "fill-accent text-accent" : "text-muted",
+          "transition-all drop-shadow-sm",
+          hearted ? "fill-accent text-accent" : "text-current",
         )}
       />
       {showCount && (
-        <span className={cn("font-medium", hearted ? "text-accent" : "text-muted")}>{count}</span>
+        <span className={cn(
+          "font-medium transition-colors drop-shadow-sm",
+          hearted ? "text-accent" : "text-current"
+        )}>{count}</span>
       )}
     </button>
   );

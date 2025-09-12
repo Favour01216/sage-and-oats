@@ -147,7 +147,7 @@ class EdamamAPIClient {
         try {
           const response = await this.makeRequest<{ hits: { recipe: any }[] }>(url.toString());
 
-          if (response && response.hits && response.hits.length > 0) {
+          if (response && response.hits && response.hits.length > 0 && response.hits[0]) {
             return this.transformEdamamRecipe(response.hits[0].recipe);
           }
         } catch (error) {
@@ -273,9 +273,12 @@ class EdamamAPIClient {
 
       if (mealType) {
         url.searchParams.set("q", mealType);
-      } else {
+      } else if (tags[0]) {
         // For other tags like vegan, gluten-free, use a general term
         url.searchParams.set("q", tags[0]);
+      } else {
+        // Fallback if first tag is undefined
+        url.searchParams.set("q", "recipe");
       }
     } else {
       // Default search when no filters

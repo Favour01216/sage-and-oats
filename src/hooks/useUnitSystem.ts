@@ -32,7 +32,7 @@ export function useUnitSystem(defaultSystem: UnitSystem = "us"): UseUnitSystemRe
         // Use metric for most countries except US, Liberia, Myanmar
         const usCountries = ["US", "LR", "MM"];
         const countryCode = locale.split("-")[1];
-        const detectedSystem = usCountries.includes(countryCode) ? "us" : "metric";
+        const detectedSystem = countryCode && usCountries.includes(countryCode) ? "us" : "metric";
         setUnitSystemState(detectedSystem);
       }
     } catch (error) {

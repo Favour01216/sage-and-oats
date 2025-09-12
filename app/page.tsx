@@ -30,9 +30,6 @@ interface Recipe {
 
 // Remove mock data - we'll fetch real data from Supabase
 
-// Cache the home page for 2 minutes
-export const revalidate = 120;
-
 export default async function Home() {
   let displayRecipes: CardData[] = [];
 

@@ -26,6 +26,7 @@ function parseFraction(fractionStr: string): number {
   if (!match) return parseFloat(fractionStr) || 0;
 
   const [, numerator = "0", denominator] = match;
+  if (!denominator) return 0;
   return parseInt(numerator) / parseInt(denominator);
 }
 
@@ -36,7 +37,7 @@ function parseQuantity(quantityStr: string): number {
   // Handle mixed numbers like "1 1/2" or "2¾"
   if (quantityStr.includes("/")) {
     const parts = quantityStr.split(/\s+/);
-    if (parts.length === 2) {
+    if (parts.length === 2 && parts[0] && parts[1]) {
       // Mixed number like "1 1/2"
       const whole = parseInt(parts[0]) || 0;
       const fraction = parseFraction(parts[1]);
@@ -80,7 +81,7 @@ export function parseIngredient(ingredientLine: string): ParsedIngredient {
   // Try to match quantity + unit + ingredient pattern
   const match = trimmed.match(MEASUREMENT_REGEX);
 
-  if (match) {
+  if (match && match[1] && match[2] && match[3]) {
     const [, quantityStr, unitStr, ingredient, preparation] = match;
 
     return {
@@ -94,7 +95,7 @@ export function parseIngredient(ingredientLine: string): ParsedIngredient {
 
   // If no pattern matches, try to extract just a number at the beginning
   const numberMatch = trimmed.match(/^(\d+(?:\.\d+)?(?:\/\d+)?|\d+\/\d+)\s+(.+)$/);
-  if (numberMatch) {
+  if (numberMatch && numberMatch[1] && numberMatch[2]) {
     const [, quantityStr, rest] = numberMatch;
     return {
       originalText: trimmed,

@@ -167,14 +167,18 @@ export function convertUnit(
 
     if (from.type === "volume" && to.type === "weight") {
       // Convert volume to cups, then to grams using density
-      const cups = (value * from.toBase) / VOLUME_UNITS.cup.toBase;
+      const cupUnit = VOLUME_UNITS.cup;
+      if (!cupUnit) return null;
+      const cups = (value * from.toBase) / cupUnit.toBase;
       const grams = cups * density;
       return grams / to.toBase;
     } else if (from.type === "weight" && to.type === "volume") {
       // Convert weight to grams, then to cups using density
+      const cupUnit = VOLUME_UNITS.cup;
+      if (!cupUnit) return null;
       const grams = value * from.toBase;
       const cups = grams / density;
-      return (cups * VOLUME_UNITS.cup.toBase) / to.toBase;
+      return (cups * cupUnit.toBase) / to.toBase;
     }
   }
 
