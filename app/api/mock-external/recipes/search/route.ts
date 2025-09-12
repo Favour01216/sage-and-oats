@@ -118,10 +118,10 @@ export async function GET(request: NextRequest) {
   if (q) {
     const searchTerm = q.toLowerCase();
     filteredRecipes = mockRecipes.filter(
-      (recipe) =>
+      recipe =>
         recipe.title.toLowerCase().includes(searchTerm) ||
-        recipe.tags.some((tag) => tag.toLowerCase().includes(searchTerm)) ||
-        recipe.cuisine.toLowerCase().includes(searchTerm)
+        recipe.tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+        recipe.cuisine.toLowerCase().includes(searchTerm),
     );
   }
 

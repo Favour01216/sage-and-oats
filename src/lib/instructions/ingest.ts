@@ -2,41 +2,41 @@
  * Instructions ingestion with caching, throttling, and sanitization
  */
 
-import { LRUCache } from 'lru-cache';
+import { LRUCache } from "lru-cache";
 
 // Allowed domains for automatic instruction extraction
 const ALLOWED_DOMAINS = new Set([
-  'allrecipes.com',
-  'foodnetwork.com',
-  'bonappetit.com',
-  'seriouseats.com',
-  'epicurious.com',
-  'simplyrecipes.com',
-  'delish.com',
-  'tasty.co',
-  'bbc.co.uk',
-  'bbcgoodfood.com',
-  'jamieoliver.com',
-  'nigella.com',
-  'gordonramsay.com',
-  'marthastewart.com',
-  'cookinglight.com',
-  'myrecipes.com',
-  'food52.com',
-  'thekitchn.com',
-  'smittenkitchen.com',
-  'minimalistbaker.com',
-  'budgetbytes.com',
-  'sallysbakingaddiction.com',
-  'kingarthurbaking.com',
-  'americastestkitchen.com',
-  'cooksillustrated.com'
+  "allrecipes.com",
+  "foodnetwork.com",
+  "bonappetit.com",
+  "seriouseats.com",
+  "epicurious.com",
+  "simplyrecipes.com",
+  "delish.com",
+  "tasty.co",
+  "bbc.co.uk",
+  "bbcgoodfood.com",
+  "jamieoliver.com",
+  "nigella.com",
+  "gordonramsay.com",
+  "marthastewart.com",
+  "cookinglight.com",
+  "myrecipes.com",
+  "food52.com",
+  "thekitchn.com",
+  "smittenkitchen.com",
+  "minimalistbaker.com",
+  "budgetbytes.com",
+  "sallysbakingaddiction.com",
+  "kingarthurbaking.com",
+  "americastestkitchen.com",
+  "cooksillustrated.com",
 ]);
 
 // TTL cache for parsed instructions (24 hours in production, 1 second in test)
 const instructionsCache = new LRUCache<string, CachedInstructions>({
   max: 500, // Maximum 500 recipes in cache
-  ttl: process.env.TEST_MODE === 'true' ? 1000 : 24 * 60 * 60 * 1000, // 1s in test, 24h in prod
+  ttl: process.env.TEST_MODE === "true" ? 1000 : 24 * 60 * 60 * 1000, // 1s in test, 24h in prod
   updateAgeOnGet: true,
   updateAgeOnHas: true,
 });
@@ -65,23 +65,23 @@ interface InstructionResult {
  */
 function sanitizeStep(html: string): string {
   // Remove HTML tags
-  let text = html.replace(/<[^>]*>/g, '');
-  
+  let text = html.replace(/<[^>]*>/g, "");
+
   // Decode HTML entities
   text = text
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ');
-  
+    .replace(/&nbsp;/g, " ");
+
   // Normalize whitespace
-  text = text.replace(/\s+/g, ' ').trim();
-  
+  text = text.replace(/\s+/g, " ").trim();
+
   // Remove leading numbers and dots (e.g., "1. " or "1) ")
-  text = text.replace(/^\d+[\.\)]\s*/, '');
-  
+  text = text.replace(/^\d+[\.\)]\s*/, "");
+
   return text;
 }
 
@@ -92,9 +92,9 @@ function extractDomain(url: string): string {
   try {
     const urlObj = new URL(url);
     // Remove www. prefix if present
-    return urlObj.hostname.replace(/^www\./, '');
+    return urlObj.hostname.replace(/^www\./, "");
   } catch {
-    return '';
+    return "";
   }
 }
 
@@ -103,19 +103,19 @@ function extractDomain(url: string): string {
  */
 async function checkRateLimit(domain: string): Promise<boolean> {
   // Skip rate limiting in test mode
-  if (process.env.TEST_MODE === 'true') {
+  if (process.env.TEST_MODE === "true") {
     return true;
   }
-  
+
   const lastRequest = domainRateLimits.get(domain);
   const now = Date.now();
-  
+
   if (lastRequest && now - lastRequest < RATE_LIMIT_MS) {
     // Wait for the remaining time
     const waitTime = RATE_LIMIT_MS - (now - lastRequest);
     await new Promise(resolve => setTimeout(resolve, waitTime));
   }
-  
+
   domainRateLimits.set(domain, Date.now());
   return true;
 }
@@ -125,16 +125,16 @@ async function checkRateLimit(domain: string): Promise<boolean> {
  */
 async function parseInstructions(
   recipeData: Record<string, unknown>,
-  sourceUrl?: string
+  sourceUrl?: string,
 ): Promise<RecipeStep[]> {
   const steps: RecipeStep[] = [];
-  
+
   // Try different common instruction formats
   if (recipeData.instructions) {
     if (Array.isArray(recipeData.instructions)) {
       // Array of instruction objects
       for (const inst of recipeData.instructions as any[]) {
-        if (typeof inst === 'string') {
+        if (typeof inst === "string") {
           steps.push({ text: sanitizeStep(inst) });
         } else if (inst.text) {
           steps.push({ text: sanitizeStep(inst.text), timer_seconds: inst.timer_seconds || null });
@@ -144,21 +144,20 @@ async function parseInstructions(
           steps.push({ text: sanitizeStep(inst.step) });
         }
       }
-    } else if (typeof recipeData.instructions === 'string') {
+    } else if (typeof recipeData.instructions === "string") {
       // Single string with steps separated by newlines or periods
-      const rawSteps = recipeData.instructions
-        .split(/[\n\r]+|\.\s+(?=[A-Z])/)
-        .filter(Boolean);
-      
+      const rawSteps = recipeData.instructions.split(/[\n\r]+|\.\s+(?=[A-Z])/).filter(Boolean);
+
       for (const step of rawSteps) {
         const sanitized = sanitizeStep(step);
-        if (sanitized.length > 10) { // Filter out very short non-steps
+        if (sanitized.length > 10) {
+          // Filter out very short non-steps
           steps.push({ text: sanitized });
         }
       }
     }
   }
-  
+
   // Try analyzedInstructions (Spoonacular format)
   if (recipeData.analyzedInstructions && Array.isArray(recipeData.analyzedInstructions)) {
     for (const section of recipeData.analyzedInstructions as any[]) {
@@ -171,15 +170,18 @@ async function parseInstructions(
       }
     }
   }
-  
+
   // Try method field
   if (recipeData.method) {
     if (Array.isArray(recipeData.method)) {
       for (const step of recipeData.method as any[]) {
-        const text = typeof step === 'string' ? step : step.text || '';
-        steps.push({ text: sanitizeStep(text), timer_seconds: typeof step === 'object' ? step.timer_seconds : null });
+        const text = typeof step === "string" ? step : step.text || "";
+        steps.push({
+          text: sanitizeStep(text),
+          timer_seconds: typeof step === "object" ? step.timer_seconds : null,
+        });
       }
-    } else if (typeof recipeData.method === 'string') {
+    } else if (typeof recipeData.method === "string") {
       const methodSteps = recipeData.method.split(/[\n\r]+/).filter(Boolean);
       for (const step of methodSteps) {
         const sanitized = sanitizeStep(step);
@@ -189,15 +191,18 @@ async function parseInstructions(
       }
     }
   }
-  
+
   // Try directions field
   if (recipeData.directions && Array.isArray(recipeData.directions)) {
     for (const dir of recipeData.directions as any[]) {
-      const text = typeof dir === 'string' ? dir : dir.text || '';
-      steps.push({ text: sanitizeStep(text), timer_seconds: typeof dir === 'object' ? dir.timer_seconds : null });
+      const text = typeof dir === "string" ? dir : dir.text || "";
+      steps.push({
+        text: sanitizeStep(text),
+        timer_seconds: typeof dir === "object" ? dir.timer_seconds : null,
+      });
     }
   }
-  
+
   return steps.filter(step => step.text.length > 0);
 }
 
@@ -213,11 +218,11 @@ export interface RecipeStep {
 export async function ingestInstructions(
   sourceUrl: string | undefined,
   externalId: string | undefined,
-  recipeData: Record<string, unknown>
+  recipeData: Record<string, unknown>,
 ): Promise<InstructionResult> {
   // Generate cache key
   const cacheKey = externalId || sourceUrl || JSON.stringify(recipeData).substring(0, 100);
-  
+
   // Check cache first
   const cached = instructionsCache.get(cacheKey);
   if (cached) {
@@ -228,15 +233,15 @@ export async function ingestInstructions(
       allowed: true,
     };
   }
-  
+
   // Extract domain
-  const domain = sourceUrl ? extractDomain(sourceUrl) : '';
+  const domain = sourceUrl ? extractDomain(sourceUrl) : "";
   const isAllowed = domain && ALLOWED_DOMAINS.has(domain);
-  
+
   // Prepare attribution
-  const attribution = sourceUrl || 'Original source';
-  const provenance = domain || 'unknown';
-  
+  const attribution = sourceUrl || "Original source";
+  const provenance = domain || "unknown";
+
   // If domain is not allowed, return with attribution only
   if (!isAllowed) {
     return {
@@ -246,15 +251,15 @@ export async function ingestInstructions(
       allowed: false,
     };
   }
-  
+
   // Apply rate limiting for allowed domains
   if (domain) {
     await checkRateLimit(domain);
   }
-  
+
   // Parse instructions
   const steps = await parseInstructions(recipeData, sourceUrl);
-  
+
   // Cache the result
   const cacheEntry: CachedInstructions = {
     steps,
@@ -263,7 +268,7 @@ export async function ingestInstructions(
     cachedAt: Date.now(),
   };
   instructionsCache.set(cacheKey, cacheEntry);
-  
+
   return {
     steps,
     provenance,
@@ -306,11 +311,7 @@ export async function fetchInstructionsForRecipe(params: {
   sourceUrl?: string;
   externalId?: string;
 }): Promise<InstructionResult> {
-  return ingestInstructions(
-    params.sourceUrl,
-    params.externalId,
-    params.recipe
-  );
+  return ingestInstructions(params.sourceUrl, params.externalId, params.recipe);
 }
 
 /**
@@ -318,9 +319,9 @@ export async function fetchInstructionsForRecipe(params: {
  */
 export async function storeInstructionsInDB(
   recipeId: string,
-  instructions: InstructionResult
+  instructions: InstructionResult,
 ): Promise<void> {
   // This would store in Supabase - currently a no-op
   // as instructions are handled differently in the app
-  console.log('Would store instructions for recipe:', recipeId);
+  console.log("Would store instructions for recipe:", recipeId);
 }

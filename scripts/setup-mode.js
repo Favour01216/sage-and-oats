@@ -19,10 +19,10 @@ if (!mode || !["live", "mirror"].includes(mode)) {
 }
 
 // Read existing .env.local or create empty object
-let envVars = {};
+const envVars = {};
 if (fs.existsSync(envFile)) {
   const envContent = fs.readFileSync(envFile, "utf-8");
-  envContent.split("\n").forEach((line) => {
+  envContent.split("\n").forEach(line => {
     const [key, ...valueParts] = line.split("=");
     if (key && valueParts.length > 0) {
       envVars[key.trim()] = valueParts.join("=").trim();

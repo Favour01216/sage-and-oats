@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { getRecipeById } from "@/src/lib/external";
 import { normalizeExtRecipe } from "@/src/lib/catalog";
-import {
-  mapNormalizedToCard,
-  mapRecipeRowToCard,
-  type CardData,
-} from "@/src/lib/cards/mapToCard";
+import { mapNormalizedToCard, mapRecipeRowToCard, type CardData } from "@/src/lib/cards/mapToCard";
 import { SOURCE_MODE } from "@/src/lib/sourceMode";
 
 export async function POST(request: NextRequest) {
@@ -29,10 +25,13 @@ export async function POST(request: NextRequest) {
       .in("recipe_id", limitedIds);
 
     const heartCounts =
-      hearts?.reduce((acc: Record<string, number>, heart: any) => {
-        acc[heart.recipe_id] = (acc[heart.recipe_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {};
+      hearts?.reduce(
+        (acc: Record<string, number>, heart: any) => {
+          acc[heart.recipe_id] = (acc[heart.recipe_id] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ) || {};
 
     if (SOURCE_MODE === "mirror") {
       // Fetch from Supabase
@@ -47,7 +46,7 @@ export async function POST(request: NextRequest) {
           tags,
           total_minutes,
           avg_rating
-        `
+        `,
         )
         .in("id", limitedIds);
 
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // LIVE mode: fetch from external API
-      const fetchPromises = limitedIds.map(async (id) => {
+      const fetchPromises = limitedIds.map(async id => {
         try {
           const externalRecipe = await getRecipeById(id);
           if (externalRecipe) {
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
       });
 
       const results = await Promise.all(fetchPromises);
-      results.forEach((result) => {
+      results.forEach(result => {
         if (result) recipes.push(result);
       });
     }

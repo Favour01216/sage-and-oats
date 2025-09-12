@@ -9,27 +9,25 @@ export const metadata: Metadata = {
 
 export default function RecipeNotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-50 to-white px-4">
+      <div className="w-full max-w-md text-center">
         <div className="mb-8">
           <ChefHat className="mx-auto h-24 w-24 text-green-600" />
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Recipe Not Found
-        </h1>
+        <h1 className="mb-4 text-3xl font-bold text-gray-900">Recipe Not Found</h1>
 
-        <p className="text-lg text-gray-600 mb-8">
-          Sorry, we couldn't find the recipe you're looking for. It might have
-          been removed or the link might be incorrect.
+        <p className="mb-8 text-lg text-gray-600">
+          Sorry, we couldn't find the recipe you're looking for. It might have been removed or the
+          link might be incorrect.
         </p>
 
         <div className="space-y-4">
           <Link
             href="/search"
-            className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="inline-flex items-center rounded-lg bg-green-600 px-6 py-3 text-white transition-colors hover:bg-green-700"
           >
-            <Search className="w-5 h-5 mr-2" />
+            <Search className="mr-2 h-5 w-5" />
             Search for Recipes
           </Link>
 
@@ -37,17 +35,17 @@ export default function RecipeNotFound() {
 
           <Link
             href="/"
-            className="inline-flex items-center px-6 py-3 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-colors"
+            className="inline-flex items-center rounded-lg border border-green-600 px-6 py-3 text-green-600 transition-colors hover:bg-green-50"
           >
-            <Home className="w-5 h-5 mr-2" />
+            <Home className="mr-2 h-5 w-5" />
             Go Home
           </Link>
         </div>
 
-        <div className="mt-8 p-4 bg-yellow-50 rounded-lg">
+        <div className="mt-8 rounded-lg bg-yellow-50 p-4">
           <p className="text-sm text-yellow-800">
-            <strong>Having trouble?</strong> Try searching for the recipe by
-            name or ingredients instead.
+            <strong>Having trouble?</strong> Try searching for the recipe by name or ingredients
+            instead.
           </p>
         </div>
       </div>

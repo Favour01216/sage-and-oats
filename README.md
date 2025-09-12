@@ -2,6 +2,18 @@
 
 A modern, accessible recipe platform built with Next.js 15, Supabase, and Algolia. Features include instant search, cook mode with timers, and comprehensive nutrition data.
 
+## 🏭 Production-Ready Features
+
+This application has been enhanced with industry-standard production practices:
+
+- **🔒 Security**: Comprehensive security headers, input validation with Zod, rate limiting, and secure API patterns
+- **📊 Monitoring**: Structured logging with request IDs, health checks, and error tracking
+- **⚡ Performance**: ISR caching, image optimization, and Lighthouse CI with 90+ performance scores
+- **♿ Accessibility**: WCAG AA compliance, focus management, and automated a11y testing
+- **🧪 Testing**: 80%+ test coverage with unit tests, E2E tests, and accessibility checks
+- **🔧 Code Quality**: Strict TypeScript, ESLint with security rules, Prettier formatting, and automated dependency updates
+- **📚 Documentation**: Comprehensive docs, security policy, contributing guidelines, and PR templates
+
 ## ✨ Features
 
 - **Instant Search**: Powered by Algolia with filters for tags, cuisine, cook time, calories, and ratings
@@ -76,6 +88,47 @@ npm run dev
 ```
 
 Visit `http://localhost:3000` and `/dev/tw` to verify Tailwind is working.
+
+## 🛠️ Development Workflow
+
+### Available Scripts
+
+```bash
+# Development
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run start            # Start production server
+
+# Code Quality
+npm run lint             # Run ESLint
+npm run lint:fix         # Fix ESLint issues automatically
+npm run format           # Format code with Prettier
+npm run format:check     # Check code formatting
+npm run typecheck        # Run TypeScript type checking
+
+# Testing
+npm run test:unit        # Run unit tests with coverage
+npm run test             # Run Playwright E2E tests
+npm run test:ui          # Run Playwright with UI
+
+# Database
+npm run db:reset         # Reset database (development only)
+npm run db:seed          # Seed database with sample data
+```
+
+### Pre-commit Hooks
+
+This project uses Husky to enforce code quality:
+
+- **Pre-commit**: Runs ESLint, Prettier, and TypeScript checks on staged files
+- **Commit-msg**: Enforces Conventional Commits format
+
+### Code Standards
+
+- **TypeScript**: Strict mode enabled with `noUncheckedIndexedAccess` and `noImplicitOverride`
+- **ESLint**: Comprehensive rules including security, accessibility, and code quality
+- **Prettier**: Consistent formatting with Tailwind CSS plugin
+- **Commits**: Must follow Conventional Commits format (e.g., `feat: add new feature`)
 
 ## 🏗️ Architecture
 
@@ -318,24 +371,28 @@ Run the SQL migration on your production Supabase instance before first deploy.
 ### Configuration
 
 Set via environment variable:
+
 ```bash
 SOURCE_MODE=live  # External API (Edamam/Spoonacular)
 SOURCE_MODE=mirror # Local database only
 ```
 
 ### LIVE Mode
+
 - Fetches recipes from external APIs
 - Real-time nutrition data
 - Requires API keys for Edamam/Spoonacular
 - Higher latency but always fresh data
 
 ### MIRROR Mode
+
 - Uses cached recipes in Supabase
 - Instant response times
 - Works offline
 - Requires initial data sync
 
 ### Key Consistency
+
 - `getRecipeKey()` ensures hearts/ratings work across both modes
 - Prefers external ID, falls back to slug
 - Consistent keying prevents duplicate data

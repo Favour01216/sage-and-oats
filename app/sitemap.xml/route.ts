@@ -12,8 +12,7 @@ export async function GET() {
       .eq("status", "published")
       .order("updated_at", { ascending: false });
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL || "https://sageandoat.com";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://sageandoat.com";
 
     // Generate sitemap XML
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -31,14 +30,12 @@ export async function GET() {
 ${
   recipes
     ?.map(
-      (recipe) => `  <url>
+      recipe => `  <url>
     <loc>${baseUrl}/recipe/${recipe.slug}</loc>
-    <lastmod>${new Date(
-      recipe.updated_at || recipe.created_at
-    ).toISOString()}</lastmod>
+    <lastmod>${new Date(recipe.updated_at || recipe.created_at).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-  </url>`
+  </url>`,
     )
     .join("\n") || ""
 }

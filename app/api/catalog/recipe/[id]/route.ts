@@ -2,18 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRecipeById } from "@/src/lib/external";
 import { normalizeExtRecipe } from "@/src/lib/catalog";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Recipe ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Recipe ID is required" }, { status: 400 });
     }
 
     // Check if the ID is numeric (Spoonacular ID) or a slug
@@ -29,7 +23,7 @@ export async function GET(
             "Spoonacular requires numeric recipe IDs. Please use the numeric ID instead of a slug.",
           receivedId: id,
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -56,7 +50,7 @@ export async function GET(
         error: "Failed to fetch recipe",
         message: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

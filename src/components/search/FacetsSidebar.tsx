@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  RefinementList,
-  RangeInput,
-  useNumericMenu,
-} from "react-instantsearch";
+import { RefinementList, RangeInput, useNumericMenu } from "react-instantsearch";
 
 // Custom Rating Component
 function RatingFilter() {
@@ -20,15 +16,15 @@ function RatingFilter() {
 
   return (
     <div className="space-y-2">
-      {items.map((item) => (
+      {items.map(item => (
         <div key={item.label} className="flex items-center">
-          <label className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors">
+          <label className="flex cursor-pointer items-center gap-2 transition-colors hover:text-primary">
             <input
               type="radio"
               name="rating"
               checked={item.isRefined}
               onChange={() => refine(item.value)}
-              className="w-4 h-4 text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="h-4 w-4 text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             />
             <span className="text-text dark:text-text-dark">{item.label}</span>
           </label>
@@ -43,7 +39,7 @@ export default function FacetsSidebar() {
     <aside className="space-y-8">
       {/* Tags */}
       <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Tags
         </h3>
         <RefinementList
@@ -55,22 +51,20 @@ export default function FacetsSidebar() {
             root: "space-y-2",
             list: "space-y-2",
             item: "flex items-center",
-            label:
-              "flex items-center gap-2 cursor-pointer hover:text-primary transition-colors",
+            label: "flex items-center gap-2 cursor-pointer hover:text-primary transition-colors",
             checkbox:
               "w-4 h-4 text-primary rounded border-border dark:border-border-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
             labelText: "text-text dark:text-text-dark",
             count: "text-sm text-muted dark:text-muted-dark ml-auto",
             searchBox: "mb-3",
-            showMore:
-              "text-sm text-primary hover:text-primary/80 transition-colors",
+            showMore: "text-sm text-primary hover:text-primary/80 transition-colors",
           }}
         />
       </div>
 
       {/* Cuisine */}
       <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Cuisine
         </h3>
         <RefinementList
@@ -81,8 +75,7 @@ export default function FacetsSidebar() {
             root: "space-y-2",
             list: "space-y-2",
             item: "flex items-center",
-            label:
-              "flex items-center gap-2 cursor-pointer hover:text-primary transition-colors",
+            label: "flex items-center gap-2 cursor-pointer hover:text-primary transition-colors",
             checkbox:
               "w-4 h-4 text-primary rounded border-border dark:border-border-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
             labelText: "text-text dark:text-text-dark",
@@ -94,7 +87,7 @@ export default function FacetsSidebar() {
 
       {/* Cook Time */}
       <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Cook Time (minutes)
         </h3>
         <RangeInput
@@ -114,7 +107,7 @@ export default function FacetsSidebar() {
 
       {/* Calories */}
       <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Calories per Serving
         </h3>
         <RangeInput
@@ -134,7 +127,7 @@ export default function FacetsSidebar() {
 
       {/* Rating */}
       <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Rating
         </h3>
         <RatingFilter />

@@ -29,7 +29,7 @@ export function HeartButton({
   const [count, setCount] = useState(initialCount);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
-  
+
   // Use stable key for hearts across LIVE/MIRROR modes
   const stableKey = getRecipeKey({ id: recipeId, slug: recipeSlug });
 
@@ -89,16 +89,10 @@ export function HeartButton({
 
         if (hearted) {
           // Remove heart
-          await supabase
-            .from("hearts")
-            .delete()
-            .eq("recipe_id", stableKey)
-            .eq("user_id", user.id);
+          await supabase.from("hearts").delete().eq("recipe_id", stableKey).eq("user_id", user.id);
         } else {
           // Add heart
-          await supabase
-            .from("hearts")
-            .insert({ recipe_id: stableKey, user_id: user.id });
+          await supabase.from("hearts").insert({ recipe_id: stableKey, user_id: user.id });
         }
       } else {
         // Anonymous users: save to localStorage
@@ -106,9 +100,7 @@ export function HeartButton({
 
         if (hearted) {
           // Remove heart
-          const updatedHearts = localHearts.filter(
-            (id: string) => id !== stableKey
-          );
+          const updatedHearts = localHearts.filter((id: string) => id !== stableKey);
           localStorage.setItem("hearts", JSON.stringify(updatedHearts));
           setHearted(false);
           setCount(Math.max(0, count - 1)); // Don't go below 0
@@ -156,9 +148,9 @@ export function HeartButton({
       className={cn(
         "flex items-center gap-2 rounded-full transition-all",
         "hover:bg-accent/10 active:scale-95",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
+        "disabled:cursor-not-allowed disabled:opacity-50",
         buttonSizeClasses[size],
-        className
+        className,
       )}
       aria-label={hearted ? "Remove from favorites" : "Add to favorites"}
     >
@@ -166,15 +158,11 @@ export function HeartButton({
         className={cn(
           sizeClasses[size],
           "transition-all",
-          hearted ? "fill-accent text-accent" : "text-muted"
+          hearted ? "fill-accent text-accent" : "text-muted",
         )}
       />
       {showCount && (
-        <span
-          className={cn("font-medium", hearted ? "text-accent" : "text-muted")}
-        >
-          {count}
-        </span>
+        <span className={cn("font-medium", hearted ? "text-accent" : "text-muted")}>{count}</span>
       )}
     </button>
   );

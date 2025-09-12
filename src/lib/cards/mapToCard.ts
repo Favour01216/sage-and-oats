@@ -33,10 +33,7 @@ export function ensureHttps(u?: string | null): string | undefined {
  * Clean up title to ensure it's human-readable
  * Falls back to domain name if title looks like a URL
  */
-export function cleanTitle(
-  t?: string | null,
-  sourceUrl?: string | null
-): string {
+export function cleanTitle(t?: string | null, sourceUrl?: string | null): string {
   // If we have a good title that's not a URL, use it
   if (t && !/^https?:\/\//i.test(t)) {
     return t;
@@ -60,10 +57,7 @@ export function cleanTitle(
  * Map search hit (from Algolia or API) to card data
  */
 export function mapHitToCard(hit: any): CardData {
-  const title = cleanTitle(
-    hit.title || hit.label,
-    hit.source_url || hit.sourceUrl
-  );
+  const title = cleanTitle(hit.title || hit.label, hit.source_url || hit.sourceUrl);
   const id = String(hit.id || hit.objectID || hit.slug || "unknown");
   const slug = String(hit.slug || hit.id || hit.objectID || "unknown");
 
@@ -71,9 +65,7 @@ export function mapHitToCard(hit: any): CardData {
     id,
     slug,
     title,
-    imageUrl: ensureHttps(
-      hit.imageUrl || hit.image_url || hit.hero_image_url || hit.image
-    ),
+    imageUrl: ensureHttps(hit.imageUrl || hit.image_url || hit.hero_image_url || hit.image),
     tags: Array.isArray(hit.tags) ? hit.tags : [],
     total_minutes: hit.total_minutes ?? hit.totalMinutes ?? undefined,
     hearts: hit.hearts ?? hit.heart_count ?? undefined,
@@ -81,10 +73,7 @@ export function mapHitToCard(hit: any): CardData {
     href: `/recipe/${encodeURIComponent(id)}`,
     sourceHost:
       hit.source_url || hit.sourceUrl
-        ? new URL(hit.source_url || hit.sourceUrl).hostname.replace(
-            /^www\./,
-            ""
-          )
+        ? new URL(hit.source_url || hit.sourceUrl).hostname.replace(/^www\./, "")
         : undefined,
   };
 }

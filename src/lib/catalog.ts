@@ -66,7 +66,7 @@ export function normalizeExtRecipe(raw: ExtRecipeRaw): RecipeNormalized {
     total_minutes: raw.total_minutes || undefined,
     avg_rating: raw.rating || undefined,
     calories_per_serving: raw.nutrition?.calories || undefined,
-    ingredients: raw.ingredients?.map((ing) => ({ line_text: ing.text })) || [],
+    ingredients: raw.ingredients?.map(ing => ({ line_text: ing.text })) || [],
     steps: raw.steps || [],
     nutrition: raw.nutrition
       ? {
@@ -96,7 +96,7 @@ export function toAlgoliaDoc(r: RecipeNormalized) {
     calories_per_serving: r.calories_per_serving ?? null,
     hearts: 0, // Default to 0, will be updated from Supabase data if available
     created_at: Math.floor(Date.now() / 1000),
-    ingredients_text: r.ingredients.map((i) => i.line_text).join(", "),
+    ingredients_text: r.ingredients.map(i => i.line_text).join(", "),
   };
 }
 

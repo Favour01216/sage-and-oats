@@ -1,44 +1,46 @@
-'use client'
+"use client";
 
-import { cn } from '@/src/lib/utils';
+import { cn } from "@/src/lib/utils";
 
 interface SearchResultsSkeletonProps {
   count?: number;
   className?: string;
 }
 
-export function SearchResultsSkeleton({ 
-  count = 12, 
-  className 
-}: SearchResultsSkeletonProps) {
+export function SearchResultsSkeleton({ count = 12, className }: SearchResultsSkeletonProps) {
   return (
-    <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6", className)}>
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+        className,
+      )}
+    >
       {Array.from({ length: count }, (_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm animate-pulse"
+          className="animate-pulse overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-gray-800"
         >
           {/* Image skeleton */}
-          <div className="aspect-[4/3] md:aspect-[16/9] bg-gray-200 dark:bg-gray-700" />
-          
+          <div className="aspect-[4/3] bg-gray-200 md:aspect-[16/9] dark:bg-gray-700" />
+
           {/* Content skeleton */}
-          <div className="p-4 space-y-3">
+          <div className="space-y-3 p-4">
             {/* Title skeleton */}
-            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4" />
-            
+            <div className="h-5 w-3/4 rounded-md bg-gray-200 dark:bg-gray-700" />
+
             {/* Tags skeleton */}
             <div className="flex gap-2">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-16" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-12" />
+              <div className="h-4 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
+              <div className="h-4 w-12 rounded-full bg-gray-200 dark:bg-gray-700" />
             </div>
-            
+
             {/* Meta info skeleton */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-8" />
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12" />
+                <div className="h-4 w-8 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-4 w-12 rounded bg-gray-200 dark:bg-gray-700" />
               </div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-6" />
+              <div className="h-4 w-6 rounded bg-gray-200 dark:bg-gray-700" />
             </div>
           </div>
         </div>
@@ -50,8 +52,8 @@ export function SearchResultsSkeleton({
 export function SearchHeaderSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-2" />
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32" />
+      <div className="mb-2 h-8 w-48 rounded bg-gray-200 dark:bg-gray-700" />
+      <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700" />
     </div>
   );
 }

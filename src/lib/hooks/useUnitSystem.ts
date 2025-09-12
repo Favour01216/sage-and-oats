@@ -1,19 +1,19 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react';
-import { UnitSystem } from '../units/conversions';
+import { useState, useEffect } from "react";
+import { UnitSystem } from "../units/conversions";
 
 /**
  * Hook to manage unit system preference with localStorage persistence
  */
-export function useUnitSystem(defaultSystem: UnitSystem = 'us') {
+export function useUnitSystem(defaultSystem: UnitSystem = "us") {
   const [unitSystem, setUnitSystem] = useState<UnitSystem>(defaultSystem);
-  
+
   // Load persisted unit system on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('preferredUnitSystem') as UnitSystem;
-      if (stored && (stored === 'us' || stored === 'metric')) {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("preferredUnitSystem") as UnitSystem;
+      if (stored && (stored === "us" || stored === "metric")) {
         setUnitSystem(stored);
       }
     }
@@ -22,14 +22,14 @@ export function useUnitSystem(defaultSystem: UnitSystem = 'us') {
   // Update unit system and persist to localStorage
   const updateUnitSystem = (newSystem: UnitSystem) => {
     setUnitSystem(newSystem);
-    
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('preferredUnitSystem', newSystem);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("preferredUnitSystem", newSystem);
     }
   };
 
   const toggleUnitSystem = () => {
-    const newSystem = unitSystem === 'us' ? 'metric' : 'us';
+    const newSystem = unitSystem === "us" ? "metric" : "us";
     updateUnitSystem(newSystem);
   };
 

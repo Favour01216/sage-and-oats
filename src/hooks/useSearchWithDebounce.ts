@@ -2,7 +2,7 @@
  * Search hook with debouncing for improved performance
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface UseSearchWithDebounceOptions {
   delay?: number;
@@ -25,20 +25,20 @@ interface UseSearchWithDebounceResult {
  * @returns Search state and controls
  */
 export function useSearchWithDebounce(
-  initialQuery: string = '',
-  options: UseSearchWithDebounceOptions = {}
+  initialQuery: string = "",
+  options: UseSearchWithDebounceOptions = {},
 ): UseSearchWithDebounceResult {
   const {
     delay = 300, // 300ms default debounce delay
     minLength = 0,
     onSearch,
   } = options;
-  
+
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [isDebouncing, setIsDebouncing] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
@@ -47,33 +47,33 @@ export function useSearchWithDebounce(
       }
     };
   }, []);
-  
+
   // Debounce query changes
   useEffect(() => {
     // Clear existing timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
-    
+
     // Skip debouncing for clearing the query
-    if (query === '') {
-      setDebouncedQuery('');
+    if (query === "") {
+      setDebouncedQuery("");
       setIsDebouncing(false);
       if (onSearch) {
-        onSearch('');
+        onSearch("");
       }
       return;
     }
-    
+
     // Skip if query is too short
     if (query.length < minLength) {
       setIsDebouncing(false);
       return;
     }
-    
+
     // Set debouncing state
     setIsDebouncing(true);
-    
+
     // Set new timer
     debounceTimer.current = setTimeout(() => {
       setDebouncedQuery(query);
@@ -82,7 +82,7 @@ export function useSearchWithDebounce(
         onSearch(query);
       }
     }, delay);
-    
+
     // Cleanup
     return () => {
       if (debounceTimer.current) {
@@ -90,17 +90,17 @@ export function useSearchWithDebounce(
       }
     };
   }, [query, delay, minLength, onSearch]);
-  
+
   // Clear search
   const clear = useCallback(() => {
-    setQuery('');
-    setDebouncedQuery('');
+    setQuery("");
+    setDebouncedQuery("");
     setIsDebouncing(false);
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
   }, []);
-  
+
   return {
     query,
     debouncedQuery,
@@ -131,13 +131,13 @@ interface UseSearchFiltersResult {
 
 export function useSearchFilters(
   initialFilters: SearchFilters = {},
-  delay: number = 250
+  delay: number = 250,
 ): UseSearchFiltersResult {
   const [filters, setFilters] = useState<SearchFilters>(initialFilters);
   const [debouncedFilters, setDebouncedFilters] = useState<SearchFilters>(initialFilters);
   const [isDebouncing, setIsDebouncing] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
@@ -146,38 +146,38 @@ export function useSearchFilters(
       }
     };
   }, []);
-  
+
   // Debounce filter changes
   useEffect(() => {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
-    
+
     setIsDebouncing(true);
-    
+
     debounceTimer.current = setTimeout(() => {
       setDebouncedFilters(filters);
       setIsDebouncing(false);
     }, delay);
-    
+
     return () => {
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current);
       }
     };
   }, [filters, delay]);
-  
+
   // Update a specific filter
-  const updateFilter = useCallback(<K extends keyof SearchFilters>(
-    key: K,
-    value: SearchFilters[K]
-  ) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-    }));
-  }, []);
-  
+  const updateFilter = useCallback(
+    <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => {
+      setFilters(prev => ({
+        ...prev,
+        [key]: value,
+      }));
+    },
+    [],
+  );
+
   // Clear all filters
   const clearFilters = useCallback(() => {
     setFilters({});
@@ -187,7 +187,7 @@ export function useSearchFilters(
       clearTimeout(debounceTimer.current);
     }
   }, []);
-  
+
   return {
     filters,
     debouncedFilters,

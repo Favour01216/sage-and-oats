@@ -1,13 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getAllRecipes } from "@/src/lib/external";
 import { normalizeExtRecipe, toAlgoliaDoc } from "@/src/lib/catalog";
 import { createClient } from "@/src/lib/supabase/server";
 import { adminClient, ALGOLIA_INDEX } from "@/src/lib/algolia";
+import { syncCatalogSchema } from "@/src/lib/validation";
+import { ok, badRequestZod, unauthorized, serverError, withRateLimit } from "@/src/lib/http";
+import { ZodError } from "zod";
 
-export async function POST(request: NextRequest) {
+async function handleSyncCatalog(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { full = false } = body;
+    const validatedData = syncCatalogSchema.parse(body);
+    const { full } = validatedData;
 
     const supabase = await createClient();
 
@@ -17,10 +21,7 @@ export async function POST(request: NextRequest) {
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized - admin access required" },
-        { status: 401 }
-      );
+      return unauthorized("Admin access required");
     }
 
     console.log(`Starting ${full ? "full" : "delta"} catalog sync...`);
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
           } as any,
           {
             onConflict: "id",
-          }
+          },
         );
 
         if (recipeError) {
@@ -72,20 +73,16 @@ export async function POST(request: NextRequest) {
             .eq("recipe_id", recipe.id);
 
           if (!ingredientsError) {
-            const { error: insertError } = await supabase
-              .from("recipe_ingredients")
-              .insert(
-                recipe.ingredients.map((ing: any, index: number) => ({
-                  recipe_id: recipe.id,
-                  line_text: ing.line_text,
-                  order_index: index,
-                })) as any
-              );
+            const { error: insertError } = await supabase.from("recipe_ingredients").insert(
+              recipe.ingredients.map((ing: any, index: number) => ({
+                recipe_id: recipe.id,
+                line_text: ing.line_text,
+                order_index: index,
+              })) as any,
+            );
 
             if (insertError) {
-              errors.push(
-                `Ingredients for ${recipe.id}: ${insertError.message}`
-              );
+              errors.push(`Ingredients for ${recipe.id}: ${insertError.message}`);
             }
           }
         }
@@ -98,16 +95,14 @@ export async function POST(request: NextRequest) {
             .eq("recipe_id", recipe.id);
 
           if (!stepsError) {
-            const { error: insertError } = await supabase
-              .from("recipe_steps")
-              .insert(
-                recipe.steps.map((step: any, index: number) => ({
-                  recipe_id: recipe.id,
-                  text: step.text,
-                  order_index: index,
-                  timer_seconds: step.timer_seconds,
-                })) as any
-              );
+            const { error: insertError } = await supabase.from("recipe_steps").insert(
+              recipe.steps.map((step: any, index: number) => ({
+                recipe_id: recipe.id,
+                text: step.text,
+                order_index: index,
+                timer_seconds: step.timer_seconds,
+              })) as any,
+            );
 
             if (insertError) {
               errors.push(`Steps for ${recipe.id}: ${insertError.message}`);
@@ -117,34 +112,28 @@ export async function POST(request: NextRequest) {
 
         // Upsert nutrition if available
         if (recipe.nutrition) {
-          const { error: nutritionError } = await supabase
-            .from("recipe_nutrition")
-            .upsert(
-              {
-                recipe_id: recipe.id,
-                calories: recipe.nutrition.calories,
-                protein_g: recipe.nutrition.protein_g,
-                fat_g: recipe.nutrition.fat_g,
-                carbs_g: recipe.nutrition.carbs_g,
-              } as any,
-              {
-                onConflict: "recipe_id",
-              }
-            );
+          const { error: nutritionError } = await supabase.from("recipe_nutrition").upsert(
+            {
+              recipe_id: recipe.id,
+              calories: recipe.nutrition.calories,
+              protein_g: recipe.nutrition.protein_g,
+              fat_g: recipe.nutrition.fat_g,
+              carbs_g: recipe.nutrition.carbs_g,
+            } as any,
+            {
+              onConflict: "recipe_id",
+            },
+          );
 
           if (nutritionError) {
-            errors.push(
-              `Nutrition for ${recipe.id}: ${nutritionError.message}`
-            );
+            errors.push(`Nutrition for ${recipe.id}: ${nutritionError.message}`);
           }
         }
 
         syncedCount++;
       } catch (error) {
         errors.push(
-          `Recipe ${recipe.id}: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
+          `Recipe ${recipe.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
       }
     }
@@ -160,7 +149,7 @@ export async function POST(request: NextRequest) {
         // Note: For Algolia v5, we'll need to implement the proper batch upload
         // For now, we'll log what would be synced
         console.log(
-          `Would sync ${algoliaObjects.length} objects to Algolia index: ${ALGOLIA_INDEX}`
+          `Would sync ${algoliaObjects.length} objects to Algolia index: ${ALGOLIA_INDEX}`,
         );
         algoliaCount = algoliaObjects.length;
 
@@ -168,10 +157,8 @@ export async function POST(request: NextRequest) {
       } catch (algoliaError) {
         errors.push(
           `Algolia sync error: ${
-            algoliaError instanceof Error
-              ? algoliaError.message
-              : "Unknown error"
-          }`
+            algoliaError instanceof Error ? algoliaError.message : "Unknown error"
+          }`,
         );
       }
     }
@@ -189,16 +176,16 @@ export async function POST(request: NextRequest) {
       errors: errors.length > 0 ? errors.slice(0, 10) : undefined, // Limit error output
     };
 
-    return NextResponse.json(response);
+    return ok(response);
   } catch (error) {
-    console.error("Catalog sync error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Sync failed",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+    if (error instanceof ZodError) {
+      return badRequestZod(error);
+    }
+    return serverError("Catalog sync error", error);
   }
 }
+
+export const POST = withRateLimit(handleSyncCatalog, {
+  windowMs: 60 * 60 * 1000, // 1 hour
+  maxRequests: 5, // 5 sync operations per hour (very restrictive)
+});

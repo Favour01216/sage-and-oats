@@ -4,9 +4,7 @@ export async function GET(request: NextRequest) {
   const SPOONACULAR_API_KEY = process.env.EXTERNAL_API_KEY;
 
   console.log("Debug - Spoonacular credentials:", {
-    apiKey: SPOONACULAR_API_KEY
-      ? `${SPOONACULAR_API_KEY.substring(0, 8)}...`
-      : "missing",
+    apiKey: SPOONACULAR_API_KEY ? `${SPOONACULAR_API_KEY.substring(0, 8)}...` : "missing",
   });
 
   if (!SPOONACULAR_API_KEY) {
@@ -20,10 +18,7 @@ export async function GET(request: NextRequest) {
   const testUrl = `https://api.spoonacular.com/recipes/complexSearch?query=chicken&number=3&addRecipeInformation=true&apiKey=${SPOONACULAR_API_KEY}`;
 
   try {
-    console.log(
-      "Testing Spoonacular API with URL:",
-      testUrl.replace(SPOONACULAR_API_KEY, "***")
-    );
+    console.log("Testing Spoonacular API with URL:", testUrl.replace(SPOONACULAR_API_KEY, "***"));
 
     const response = await fetch(testUrl, {
       method: "GET",
@@ -45,10 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log(
-      "Spoonacular API success - received results:",
-      data.results?.length || 0
-    );
+    console.log("Spoonacular API success - received results:", data.results?.length || 0);
 
     return NextResponse.json({
       success: true,

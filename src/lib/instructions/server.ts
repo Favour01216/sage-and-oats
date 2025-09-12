@@ -2,17 +2,15 @@
  * Server-side instruction ingestion for LIVE mode
  */
 
-import { fetchInstructionsForRecipe, storeInstructionsInDB } from './ingest';
-import { RecipeNormalized } from '../catalog';
-import { createClient } from '../supabase/server';
+import { fetchInstructionsForRecipe, storeInstructionsInDB } from "./ingest";
+import { RecipeNormalized } from "../catalog";
+import { createClient } from "../supabase/server";
 
 /**
  * Ingest instructions for a recipe in LIVE mode
  * Called when user opens a recipe page
  */
-export async function ingestInstructionsLive(
-  recipe: RecipeNormalized
-): Promise<RecipeNormalized> {
+export async function ingestInstructionsLive(recipe: RecipeNormalized): Promise<RecipeNormalized> {
   try {
     // Attempt to fetch instructions
     const instructions = await fetchInstructionsForRecipe({
@@ -22,10 +20,10 @@ export async function ingestInstructionsLive(
     });
 
     // If we got instructions and they're from an external source, store them
-    if (instructions && instructions.provenance !== 'normalized') {
+    if (instructions && instructions.provenance !== "normalized") {
       // Store in database for future use
       await storeInstructionsInDB(recipe.id, instructions);
-      
+
       // Update the recipe with the ingested steps
       return {
         ...recipe,
@@ -35,7 +33,7 @@ export async function ingestInstructionsLive(
 
     return recipe;
   } catch (error) {
-    console.error('Failed to ingest instructions in LIVE mode:', error);
+    console.error("Failed to ingest instructions in LIVE mode:", error);
     return recipe;
   }
 }
@@ -44,11 +42,9 @@ export async function ingestInstructionsLive(
  * Ingest instructions for multiple recipes in MIRROR mode
  * Called during sync operations
  */
-export async function ingestInstructionsMirror(
-  recipes: RecipeNormalized[]
-): Promise<void> {
+export async function ingestInstructionsMirror(recipes: RecipeNormalized[]): Promise<void> {
   const supabase = await createClient();
-  
+
   for (const recipe of recipes) {
     try {
       // Skip if recipe already has steps

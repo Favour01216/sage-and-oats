@@ -4,13 +4,13 @@
 
 @layer base {
   html {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
-  
+
   body {
     line-height: 1.6;
     @apply antialiased;
-    background-color: #FAFAF8;
+    background-color: #fafaf8;
     color: #111827;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -26,20 +26,25 @@
   }
 
   /* Typography improvements */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-serif;
   }
 
   /* Link styles */
   a {
-    @apply text-primary hover:text-primary/80 transition-colors;
-    color: #2F5D45;
+    @apply text-primary transition-colors hover:text-primary/80;
+    color: #2f5d45;
     text-decoration: underline;
     text-underline-offset: 2px;
   }
 
   a:visited {
-    color: #1F3F2F;
+    color: #1f3f2f;
   }
 
   /* Prose improvements */
@@ -48,11 +53,11 @@
   }
 
   .prose h2 {
-    @apply text-2xl font-semibold mt-8 mb-4 text-gray-900 dark:text-gray-100;
+    @apply mb-4 mt-8 text-2xl font-semibold text-gray-900 dark:text-gray-100;
   }
 
   .prose h3 {
-    @apply text-xl font-semibold mt-6 mb-3 text-gray-900 dark:text-gray-100;
+    @apply mb-3 mt-6 text-xl font-semibold text-gray-900 dark:text-gray-100;
   }
 
   .prose ul {
@@ -93,12 +98,12 @@
 @layer components {
   /* Container utility */
   .container-custom {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
   }
 
   /* Button base styles */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
 
   .btn-primary {
@@ -110,19 +115,19 @@
   }
 
   .btn-ghost {
-    @apply text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:ring-gray-500;
+    @apply text-gray-700 hover:bg-gray-100 focus:ring-gray-500 dark:text-gray-300 dark:hover:bg-gray-800;
   }
 
   /* Badge/Chip styles */
   .badge {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+    @apply inline-flex items-center rounded-full px-3 py-1 text-sm font-medium;
   }
 
   .badge-default {
-    @apply bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700;
+    @apply border border-gray-200 bg-gray-100 text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200;
   }
 
   .badge-primary {
-    @apply bg-primary/10 text-primary border border-primary/20;
+    @apply border border-primary/20 bg-primary/10 text-primary;
   }
 }

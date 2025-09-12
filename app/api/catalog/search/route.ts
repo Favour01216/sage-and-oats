@@ -1,60 +1,45 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { searchRecipes } from "@/src/lib/external";
 import { normalizeExtRecipe } from "@/src/lib/catalog";
+import { searchParamsSchema } from "@/src/lib/validation";
+import { ok, badRequestZod, serverError, withRateLimit } from "@/src/lib/http";
+import { ZodError } from "zod";
 
-export async function GET(request: NextRequest) {
+async function handleSearch(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
-    const q = searchParams.get("q") || "";
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const perPage = parseInt(searchParams.get("perPage") || "12", 10);
+    // Parse and validate search parameters
+    const params = Object.fromEntries(searchParams.entries());
+    const validatedParams = searchParamsSchema.parse(params);
 
-    // Handle tags array
-    const tags: string[] = [];
-    searchParams.forEach((value, key) => {
-      if (key === "tags[]" || key === "tags") {
-        tags.push(value);
-      }
-    });
+    const { q, page, perPage, tags, cuisine, time, timeMin, calorieMax, calorieMin } = validatedParams;
 
-    // Handle cuisine array
-    const cuisine: string[] = [];
-    searchParams.forEach((value, key) => {
-      if (key === "cuisine[]" || key === "cuisine") {
-        cuisine.push(value);
-      }
-    });
-
-    // Handle time filter
-    const timeMax = searchParams.get("time");
-    const timeMin = searchParams.get("timeMin");
-    const time =
-      timeMax || timeMin
+    // Build time filter
+    const timeFilter =
+      time || timeMin
         ? {
-            min: timeMin ? parseInt(timeMin, 10) : undefined,
-            max: timeMax ? parseInt(timeMax, 10) : undefined,
+            min: timeMin,
+            max: time,
           }
         : undefined;
 
-    // Handle calorie filter
-    const calorieMax = searchParams.get("calorieMax");
-    const calorieMin = searchParams.get("calorieMin");
-    const calories =
+    // Build calorie filter
+    const calorieFilter =
       calorieMax || calorieMin
         ? {
-            min: calorieMin ? parseInt(calorieMin, 10) : undefined,
-            max: calorieMax ? parseInt(calorieMax, 10) : undefined,
+            min: calorieMin,
+            max: calorieMax,
           }
         : undefined;
 
     // Call external API
     const result = await searchRecipes({
-      q,
-      tags: tags.length > 0 ? tags : undefined,
-      cuisine: cuisine.length > 0 ? cuisine : undefined,
-      time,
-      calories,
+      q: q ?? "",
+      tags: tags && tags.length > 0 ? tags : undefined,
+      cuisine: cuisine && cuisine.length > 0 ? cuisine : undefined,
+      time: timeFilter,
+      calories: calorieFilter,
       page,
       perPage,
     });
@@ -62,7 +47,7 @@ export async function GET(request: NextRequest) {
     // Normalize all recipes
     const normalizedItems = result.items.map(normalizeExtRecipe);
 
-    return NextResponse.json({
+    return ok({
       items: normalizedItems,
       total: result.total,
       page: result.page,
@@ -70,15 +55,14 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil(result.total / result.perPage),
     });
   } catch (error) {
-    console.error("Catalog search error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to search recipes",
-        message: error instanceof Error ? error.message : "Unknown error",
-        items: [],
-        total: 0,
-      },
-      { status: 500 }
-    );
+    if (error instanceof ZodError) {
+      return badRequestZod(error);
+    }
+    return serverError("Catalog search error", error);
   }
 }
+
+export const GET = withRateLimit(handleSearch, {
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 200, // 200 search requests per window
+});

@@ -37,22 +37,22 @@ export interface NutritionPerServing {
  */
 export function calculatePerServing(
   totalNutrition: NutritionData,
-  servings: number
+  servings: number,
 ): NutritionPerServing {
   // Ensure servings is at least 1
   const validServings = Math.max(1, servings);
-  
+
   return {
     calories: Math.round((totalNutrition.calories || 0) / validServings),
-    protein: Math.round((totalNutrition.protein || 0) / validServings * 10) / 10,
-    carbs: Math.round((totalNutrition.carbs || 0) / validServings * 10) / 10,
-    fat: Math.round((totalNutrition.fat || 0) / validServings * 10) / 10,
-    fiber: Math.round((totalNutrition.fiber || 0) / validServings * 10) / 10,
-    sugar: Math.round((totalNutrition.sugar || 0) / validServings * 10) / 10,
+    protein: Math.round(((totalNutrition.protein || 0) / validServings) * 10) / 10,
+    carbs: Math.round(((totalNutrition.carbs || 0) / validServings) * 10) / 10,
+    fat: Math.round(((totalNutrition.fat || 0) / validServings) * 10) / 10,
+    fiber: Math.round(((totalNutrition.fiber || 0) / validServings) * 10) / 10,
+    sugar: Math.round(((totalNutrition.sugar || 0) / validServings) * 10) / 10,
     sodium: Math.round((totalNutrition.sodium || 0) / validServings),
     cholesterol: Math.round((totalNutrition.cholesterol || 0) / validServings),
-    saturatedFat: Math.round((totalNutrition.saturatedFat || 0) / validServings * 10) / 10,
-    transFat: Math.round((totalNutrition.transFat || 0) / validServings * 10) / 10,
+    saturatedFat: Math.round(((totalNutrition.saturatedFat || 0) / validServings) * 10) / 10,
+    transFat: Math.round(((totalNutrition.transFat || 0) / validServings) * 10) / 10,
   };
 }
 
@@ -63,10 +63,7 @@ export function calculatePerServing(
  * @param scaleFactor - Scaling factor
  * @returns Scaled nutrition data
  */
-export function scaleNutrition(
-  nutrition: NutritionData,
-  scaleFactor: number
-): NutritionData {
+export function scaleNutrition(nutrition: NutritionData, scaleFactor: number): NutritionData {
   return {
     calories: nutrition.calories ? nutrition.calories * scaleFactor : undefined,
     protein: nutrition.protein ? nutrition.protein * scaleFactor : undefined,
@@ -90,18 +87,19 @@ export function scaleNutrition(
  */
 export function formatNutritionValue(
   value: number | undefined,
-  unit: string = '',
-  precision: number = 1
+  unit: string = "",
+  precision: number = 1,
 ): string {
   if (value === undefined || value === null) {
-    return '—';
+    return "—";
   }
-  
+
   // Round to specified precision
-  const rounded = precision === 0 
-    ? Math.round(value)
-    : Math.round(value * Math.pow(10, precision)) / Math.pow(10, precision);
-  
+  const rounded =
+    precision === 0
+      ? Math.round(value)
+      : Math.round(value * Math.pow(10, precision)) / Math.pow(10, precision);
+
   // Format with unit
   return unit ? `${rounded}${unit}` : rounded.toString();
 }
@@ -113,10 +111,7 @@ export function formatNutritionValue(
  * @param nutrient - Nutrient name
  * @returns Percentage of daily value
  */
-export function calculateDailyValue(
-  value: number,
-  nutrient: keyof NutritionData
-): number {
+export function calculateDailyValue(value: number, nutrient: keyof NutritionData): number {
   const dailyValues: Record<keyof NutritionData, number> = {
     calories: 2000,
     protein: 50,
@@ -129,12 +124,12 @@ export function calculateDailyValue(
     saturatedFat: 20,
     transFat: 0, // No daily value for trans fat
   };
-  
+
   const dv = dailyValues[nutrient];
   if (!dv || dv === 0) {
     return 0;
   }
-  
+
   return Math.round((value / dv) * 100);
 }
 
@@ -149,18 +144,18 @@ export function extractNutrition(recipeData: any): NutritionData {
   if (recipeData.nutrition) {
     return normalizeNutrition(recipeData.nutrition);
   }
-  
+
   if (recipeData.nutritionInfo) {
     return normalizeNutrition(recipeData.nutritionInfo);
   }
-  
+
   if (recipeData.nutrients) {
     return normalizeNutrition(recipeData.nutrients);
   }
-  
+
   // Check for individual fields
   const nutrition: NutritionData = {};
-  
+
   if (recipeData.calories !== undefined) {
     nutrition.calories = recipeData.calories;
   }
@@ -182,7 +177,7 @@ export function extractNutrition(recipeData: any): NutritionData {
   if (recipeData.sodium !== undefined) {
     nutrition.sodium = recipeData.sodium;
   }
-  
+
   return nutrition;
 }
 
@@ -193,36 +188,40 @@ export function extractNutrition(recipeData: any): NutritionData {
  */
 function normalizeNutrition(data: any): NutritionData {
   const nutrition: NutritionData = {};
-  
+
   // Handle array format (Spoonacular style)
   if (Array.isArray(data)) {
     for (const nutrient of data) {
       const name = nutrient.name?.toLowerCase() || nutrient.title?.toLowerCase();
       const amount = nutrient.amount || nutrient.value;
-      
-      if (name?.includes('calor')) {
+
+      if (name?.includes("calor")) {
         nutrition.calories = amount;
-      } else if (name?.includes('protein')) {
+      } else if (name?.includes("protein")) {
         nutrition.protein = amount;
-      } else if (name?.includes('carb')) {
+      } else if (name?.includes("carb")) {
         nutrition.carbs = amount;
-      } else if (name?.includes('fat') && !name?.includes('saturated') && !name?.includes('trans')) {
+      } else if (
+        name?.includes("fat") &&
+        !name?.includes("saturated") &&
+        !name?.includes("trans")
+      ) {
         nutrition.fat = amount;
-      } else if (name?.includes('fiber')) {
+      } else if (name?.includes("fiber")) {
         nutrition.fiber = amount;
-      } else if (name?.includes('sugar')) {
+      } else if (name?.includes("sugar")) {
         nutrition.sugar = amount;
-      } else if (name?.includes('sodium')) {
+      } else if (name?.includes("sodium")) {
         nutrition.sodium = amount;
-      } else if (name?.includes('cholesterol')) {
+      } else if (name?.includes("cholesterol")) {
         nutrition.cholesterol = amount;
-      } else if (name?.includes('saturated')) {
+      } else if (name?.includes("saturated")) {
         nutrition.saturatedFat = amount;
-      } else if (name?.includes('trans')) {
+      } else if (name?.includes("trans")) {
         nutrition.transFat = amount;
       }
     }
-  } else if (typeof data === 'object') {
+  } else if (typeof data === "object") {
     // Handle object format
     nutrition.calories = data.calories || data.kcal || data.energy;
     nutrition.protein = data.protein || data.proteinContent;
@@ -235,6 +234,6 @@ function normalizeNutrition(data: any): NutritionData {
     nutrition.saturatedFat = data.saturatedFat || data.saturatedFatContent;
     nutrition.transFat = data.transFat || data.transFatContent;
   }
-  
+
   return nutrition;
 }

@@ -1,6 +1,6 @@
 /**
  * Example domain parser for recipe instructions
- * 
+ *
  * This is a template for creating domain-specific parsers.
  * Only create parsers for domains you have explicit permission to scrape.
  */
@@ -22,9 +22,9 @@ export default {
     // 2. Use proper HTML parsing (cheerio) to extract steps
     // 3. Handle errors gracefully
     // 4. Extract timer information if available
-    
-    throw new Error('Example parser - do not use in production');
-    
+
+    throw new Error("Example parser - do not use in production");
+
     // Example structure that real parsers should return:
     /*
     return {

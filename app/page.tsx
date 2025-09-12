@@ -8,6 +8,9 @@ import { normalizeExtRecipe } from "@/src/lib/catalog";
 import { mapNormalizedToCard, type CardData } from "@/src/lib/cards/mapToCard";
 import { SOURCE_MODE } from "@/src/lib/sourceMode";
 
+// Enable ISR with 2 minute revalidation
+export const revalidate = 120;
+
 // Define types for our data
 interface Recipe {
   id: string;
@@ -41,7 +44,8 @@ export default async function Home() {
       // Query recipes with heart counts
       const { data: recipes, error } = await supabase
         .from("recipes")
-        .select(`
+        .select(
+          `
           id,
           slug,
           title,
@@ -49,7 +53,8 @@ export default async function Home() {
           tags,
           total_minutes,
           avg_rating
-        `)
+        `,
+        )
         .order("created_at", { ascending: false })
         .limit(8);
 
@@ -57,19 +62,23 @@ export default async function Home() {
         console.error("Failed to fetch recipes from Supabase:", error);
       } else if (recipes) {
         // Get heart counts for these recipes
-        const recipeIds = recipes.map((r) => r.id);
+        const recipeIds = recipes.map(r => r.id);
         const { data: hearts } = await supabase
           .from("hearts")
           .select("recipe_id")
           .in("recipe_id", recipeIds);
 
-        const heartCounts = hearts?.reduce((acc: Record<string, number>, heart: any) => {
-          acc[heart.recipe_id] = (acc[heart.recipe_id] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>) || {};
+        const heartCounts =
+          hearts?.reduce(
+            (acc: Record<string, number>, heart: any) => {
+              acc[heart.recipe_id] = (acc[heart.recipe_id] || 0) + 1;
+              return acc;
+            },
+            {} as Record<string, number>,
+          ) || {};
 
         // Map to card data
-        displayRecipes = recipes.map((recipe) => ({
+        displayRecipes = recipes.map(recipe => ({
           ...mapNormalizedToCard(recipe),
           hearts: heartCounts[recipe.id] || 0,
         }));
@@ -92,10 +101,14 @@ export default async function Home() {
           .select("recipe_id")
           .in("recipe_id", recipeIds);
 
-        const heartCounts = hearts?.reduce((acc: Record<string, number>, heart: any) => {
-          acc[heart.recipe_id] = (acc[heart.recipe_id] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>) || {};
+        const heartCounts =
+          hearts?.reduce(
+            (acc: Record<string, number>, heart: any) => {
+              acc[heart.recipe_id] = (acc[heart.recipe_id] || 0) + 1;
+              return acc;
+            },
+            {} as Record<string, number>,
+          ) || {};
 
         // Map to card data
         displayRecipes = normalizedRecipes.map((recipe: any) => ({
@@ -112,25 +125,25 @@ export default async function Home() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-primary/10 via-white to-accent/10 py-20 lg:py-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl lg:text-7xl font-serif font-bold text-gray-900 dark:text-gray-100 mb-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            <h1 className="mb-6 font-serif text-5xl font-bold text-gray-900 lg:text-7xl dark:text-gray-100">
               Sage & Oat
             </h1>
-            <p className="text-xl lg:text-2xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-              Mindful recipes for nourishing meals. Simple ingredients, bold
-              flavors, beautiful presentation.
+            <p className="mb-8 text-xl leading-relaxed text-gray-600 lg:text-2xl dark:text-gray-400">
+              Mindful recipes for nourishing meals. Simple ingredients, bold flavors, beautiful
+              presentation.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Link href="/search">
                 <Button size="lg" className="gap-2">
-                  <Search className="w-5 h-5" />
+                  <Search className="h-5 w-5" />
                   Browse Recipes
                 </Button>
               </Link>
               <Link href="/cook/lemon-herb-roasted-chicken">
                 <Button variant="outline" size="lg" className="gap-2">
-                  <ChefHat className="w-5 h-5" />
+                  <ChefHat className="h-5 w-5" />
                   Cook Mode Demo
                 </Button>
               </Link>
@@ -140,77 +153,61 @@ export default async function Home() {
       </section>
 
       {/* Quick Filters */}
-      <section className="py-12 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-serif font-semibold text-center mb-8 text-gray-900 dark:text-gray-100">
+      <section className="bg-gray-50 py-12 dark:bg-gray-900">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="mb-8 text-center font-serif text-2xl font-semibold text-gray-900 dark:text-gray-100">
             Quick Filters
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link
               href="/search?tags=vegan"
-              className="group flex items-center gap-3 p-6 bg-white dark:bg-gray-800 rounded-2xl hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700"
+              className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-6 transition-all duration-300 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800"
             >
-              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full group-hover:scale-110 transition-transform">
-                <Leaf className="w-6 h-6 text-green-600 dark:text-green-400" />
+              <div className="rounded-full bg-green-100 p-3 transition-transform group-hover:scale-110 dark:bg-green-900/30">
+                <Leaf className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  Vegan
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Plant-based goodness
-                </p>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Vegan</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Plant-based goodness</p>
               </div>
             </Link>
 
             <Link
               href="/search?tags=gluten-free"
-              className="group flex items-center gap-3 p-6 bg-white dark:bg-gray-800 rounded-2xl hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700"
+              className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-6 transition-all duration-300 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800"
             >
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full group-hover:scale-110 transition-transform">
-                <Leaf className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="rounded-full bg-blue-100 p-3 transition-transform group-hover:scale-110 dark:bg-blue-900/30">
+                <Leaf className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  Gluten-Free
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Safe & delicious
-                </p>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Gluten-Free</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Safe & delicious</p>
               </div>
             </Link>
 
             <Link
               href="/search?time=30"
-              className="group flex items-center gap-3 p-6 bg-white dark:bg-gray-800 rounded-2xl hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700"
+              className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-6 transition-all duration-300 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800"
             >
-              <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-full group-hover:scale-110 transition-transform">
-                <Clock className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+              <div className="rounded-full bg-orange-100 p-3 transition-transform group-hover:scale-110 dark:bg-orange-900/30">
+                <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  30-Minute
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Quick & easy meals
-                </p>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">30-Minute</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Quick & easy meals</p>
               </div>
             </Link>
 
             <Link
               href="/search?tags=breakfast"
-              className="group flex items-center gap-3 p-6 bg-white dark:bg-gray-800 rounded-2xl hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700"
+              className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-6 transition-all duration-300 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800"
             >
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full group-hover:scale-110 transition-transform">
-                <Zap className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <div className="rounded-full bg-purple-100 p-3 transition-transform group-hover:scale-110 dark:bg-purple-900/30">
+                <Zap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  Breakfast
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Start your day right
-                </p>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Breakfast</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Start your day right</p>
               </div>
             </Link>
           </div>
@@ -219,14 +216,14 @@ export default async function Home() {
 
       {/* Latest Recipes */}
       <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl font-serif font-semibold text-gray-900 dark:text-gray-100">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 flex items-center justify-between">
+            <h2 className="font-serif text-3xl font-semibold text-gray-900 dark:text-gray-100">
               Latest Recipes
             </h2>
             <Link
               href="/search"
-              className="text-primary hover:text-primary/80 transition-colors font-medium"
+              className="font-medium text-primary transition-colors hover:text-primary/80"
             >
               View all →
             </Link>
@@ -234,7 +231,7 @@ export default async function Home() {
 
           {displayRecipes.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                 {displayRecipes.map((recipe, index) => (
                   <RecipeCard
                     key={recipe.id}
@@ -253,7 +250,7 @@ export default async function Home() {
                 ))}
               </div>
 
-              <div className="text-center mt-12">
+              <div className="mt-12 text-center">
                 <Link href="/search">
                   <Button variant="outline" size="lg">
                     Load More Recipes
@@ -262,10 +259,9 @@ export default async function Home() {
               </div>
             </>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                No recipes found. Start by adding some recipes in the admin
-                panel!
+            <div className="py-12 text-center">
+              <p className="mb-4 text-gray-600 dark:text-gray-400">
+                No recipes found. Start by adding some recipes in the admin panel!
               </p>
               <Link href="/admin/recipes/new">
                 <Button>Add First Recipe</Button>

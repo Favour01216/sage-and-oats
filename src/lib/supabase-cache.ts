@@ -24,10 +24,7 @@ export class SupabaseRecipeCache {
   private readonly CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
   private readonly SEARCH_CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 
-  async cacheRecipe(
-    recipeUri: string,
-    recipeData: EdamamRecipe
-  ): Promise<void> {
+  async cacheRecipe(recipeUri: string, recipeData: EdamamRecipe): Promise<void> {
     try {
       const { error } = await this.supabase.from("cached_recipes").upsert(
         {
@@ -38,16 +35,13 @@ export class SupabaseRecipeCache {
         },
         {
           onConflict: "uri",
-        }
+        },
       );
 
       if (error) {
         console.error("Failed to cache recipe:", error);
       } else {
-        console.log(
-          "✅ Recipe cached in Supabase:",
-          recipeUri.slice(0, 50) + "..."
-        );
+        console.log("✅ Recipe cached in Supabase:", `${recipeUri.slice(0, 50)}...`);
       }
     } catch (error) {
       console.error("Cache recipe error:", error);
@@ -86,24 +80,18 @@ export class SupabaseRecipeCache {
   }
 
   // Cache search results
-  async cacheSearch(
-    searchKey: string,
-    results: any,
-    queryParams: any = {}
-  ): Promise<void> {
+  async cacheSearch(searchKey: string, results: any, queryParams: any = {}): Promise<void> {
     try {
       const { error } = await this.supabase.from("search_cache").upsert(
         {
           cache_key: searchKey,
           query_params: queryParams as any,
           results: results as any,
-          expires_at: new Date(
-            Date.now() + this.SEARCH_CACHE_DURATION
-          ).toISOString(),
+          expires_at: new Date(Date.now() + this.SEARCH_CACHE_DURATION).toISOString(),
         },
         {
           onConflict: "cache_key",
-        }
+        },
       );
 
       if (error) {
@@ -139,10 +127,7 @@ export class SupabaseRecipeCache {
         .eq("cache_key", searchKey)
         .then();
 
-      console.log(
-        "✅ Retrieved cached search results from Supabase:",
-        searchKey
-      );
+      console.log("✅ Retrieved cached search results from Supabase:", searchKey);
       return data.results;
     } catch (error) {
       console.error("Get cached search error:", error);

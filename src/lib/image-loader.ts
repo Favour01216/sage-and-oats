@@ -42,7 +42,5 @@ export default function customImageLoader({
   }
 
   // For local images, use default Next.js behavior
-  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=${
-    quality || 75
-  }`;
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=${quality || 75}`;
 }

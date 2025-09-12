@@ -17,7 +17,7 @@ export default function CollectionsClient() {
       try {
         // Get hearts from localStorage
         const localHearts = JSON.parse(localStorage.getItem("hearts") || "[]");
-        
+
         if (localHearts.length > 0) {
           // Fetch recipe details from API
           const response = await fetch("/api/collections/hydrate", {
@@ -25,7 +25,7 @@ export default function CollectionsClient() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ recipeIds: localHearts }),
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             setRecipes(data.recipes || []);
@@ -37,19 +37,17 @@ export default function CollectionsClient() {
         setLoading(false);
       }
     }
-    
+
     loadLocalHearts();
   }, []);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">
-              Loading your collection...
-            </p>
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading your collection...</p>
           </div>
         </div>
       </div>
@@ -58,12 +56,12 @@ export default function CollectionsClient() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Heart className="w-8 h-8 text-accent fill-current" />
-            <h1 className="text-3xl font-serif font-bold text-gray-900 dark:text-gray-100">
+          <div className="mb-4 flex items-center gap-3">
+            <Heart className="h-8 w-8 fill-current text-accent" />
+            <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100">
               My Collection
             </h1>
           </div>
@@ -74,21 +72,20 @@ export default function CollectionsClient() {
 
         {recipes.length === 0 ? (
           /* Empty State */
-          <div className="text-center py-16">
-            <Heart className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <div className="py-16 text-center">
+            <Heart className="mx-auto mb-4 h-16 w-16 text-gray-300 dark:text-gray-600" />
+            <h2 className="mb-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
               No saved recipes yet
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-              Start exploring recipes and tap the heart icon to save your
-              favorites here.
+            <p className="mx-auto mb-6 max-w-md text-gray-600 dark:text-gray-400">
+              Start exploring recipes and tap the heart icon to save your favorites here.
             </p>
             <Link href="/">
               <Button>Discover Recipes</Button>
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {recipes.map((recipe, index) => (
               <RecipeCard
                 key={recipe.id}

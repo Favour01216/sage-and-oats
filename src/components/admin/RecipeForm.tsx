@@ -1,142 +1,144 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { ImageUpload } from './ImageUpload'
-import { IngredientsEditor } from './IngredientsEditor'
-import { StepsEditor } from './StepsEditor'
-import { RecipePreview } from './RecipePreview'
+import { useState, useEffect } from "react";
+import { ImageUpload } from "./ImageUpload";
+import { IngredientsEditor } from "./IngredientsEditor";
+import { StepsEditor } from "./StepsEditor";
+import { RecipePreview } from "./RecipePreview";
 
 interface RecipeFormProps {
-  recipe?: any
-  onSubmit: (data: any) => Promise<void>
-  loading?: boolean
+  recipe?: any;
+  onSubmit: (data: any) => Promise<void>;
+  loading?: boolean;
 }
 
 export function RecipeForm({ recipe, onSubmit, loading }: RecipeFormProps) {
   const [formData, setFormData] = useState({
-    title: recipe?.title || '',
-    slug: recipe?.slug || '',
-    intro: recipe?.intro || '',
-    yield: recipe?.yield || '4 servings',
+    title: recipe?.title || "",
+    slug: recipe?.slug || "",
+    intro: recipe?.intro || "",
+    yield: recipe?.yield || "4 servings",
     total_minutes: recipe?.total_minutes || 30,
-    difficulty: recipe?.difficulty || 'easy',
+    difficulty: recipe?.difficulty || "easy",
     tags: recipe?.tags || [],
-    cuisine: recipe?.cuisine || '',
-    hero_image_url: recipe?.hero_image_url || '',
+    cuisine: recipe?.cuisine || "",
+    hero_image_url: recipe?.hero_image_url || "",
     ingredients: recipe?.ingredients || [],
     steps: recipe?.steps || [],
-    status: recipe?.status || 'draft'
-  })
+    status: recipe?.status || "draft",
+  });
 
-  const [showPreview, setShowPreview] = useState(false)
-  const [nutritionLoading, setNutritionLoading] = useState(false)
-  const [nutrition, setNutrition] = useState(null)
+  const [showPreview, setShowPreview] = useState(false);
+  const [nutritionLoading, setNutritionLoading] = useState(false);
+  const [nutrition, setNutrition] = useState(null);
 
   // Auto-generate slug from title
   useEffect(() => {
     if (!recipe && formData.title) {
       const slug = formData.title
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-      setFormData(prev => ({ ...prev, slug }))
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      setFormData(prev => ({ ...prev, slug }));
     }
-  }, [formData.title, recipe])
+  }, [formData.title, recipe]);
 
   const handleCalculateNutrition = async () => {
-    if (formData.ingredients.length === 0) return
-    
-    setNutritionLoading(true)
+    if (formData.ingredients.length === 0) return;
+
+    setNutritionLoading(true);
     try {
-      const response = await fetch('/api/nutrition/calculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/nutrition/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ingredientLines: formData.ingredients.map((i: any) => i.line),
-          servings: parseInt(formData.yield.match(/\d+/)?.[0] || '4')
-        })
-      })
-      const data = await response.json()
-      setNutrition(data)
+          servings: parseInt(formData.yield.match(/\d+/)?.[0] || "4"),
+        }),
+      });
+      const data = await response.json();
+      setNutrition(data);
     } catch (error) {
-      console.error('Failed to calculate nutrition:', error)
+      console.error("Failed to calculate nutrition:", error);
     }
-    setNutritionLoading(false)
-  }
+    setNutritionLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    await onSubmit({ ...formData, nutrition })
-  }
+    e.preventDefault();
+    await onSubmit({ ...formData, nutrition });
+  };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-8">
+    <div className="grid gap-8 lg:grid-cols-2">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-surface p-6 rounded-lg space-y-4">
+        <div className="space-y-4 rounded-lg bg-surface p-6">
           <h2 className="text-lg font-semibold">Basic Information</h2>
-          
+
           <div>
-            <label className="block text-sm font-medium mb-1">Title</label>
+            <label className="mb-1 block text-sm font-medium">Title</label>
             <input
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
+              onChange={e => setFormData({ ...formData, title: e.target.value })}
+              className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-primary"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Slug</label>
+            <label className="mb-1 block text-sm font-medium">Slug</label>
             <input
               type="text"
               value={formData.slug}
-              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
+              onChange={e => setFormData({ ...formData, slug: e.target.value })}
+              className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-primary"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Introduction</label>
+            <label className="mb-1 block text-sm font-medium">Introduction</label>
             <textarea
               value={formData.intro}
-              onChange={(e) => setFormData({ ...formData, intro: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
+              onChange={e => setFormData({ ...formData, intro: e.target.value })}
+              className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-primary"
               rows={3}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Yield</label>
+              <label className="mb-1 block text-sm font-medium">Yield</label>
               <input
                 type="text"
                 value={formData.yield}
-                onChange={(e) => setFormData({ ...formData, yield: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
+                onChange={e => setFormData({ ...formData, yield: e.target.value })}
+                className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-primary"
                 placeholder="4 servings"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Total Minutes</label>
+              <label className="mb-1 block text-sm font-medium">Total Minutes</label>
               <input
                 type="number"
                 value={formData.total_minutes}
-                onChange={(e) => setFormData({ ...formData, total_minutes: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
+                onChange={e =>
+                  setFormData({ ...formData, total_minutes: parseInt(e.target.value) })
+                }
+                className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Difficulty</label>
+              <label className="mb-1 block text-sm font-medium">Difficulty</label>
               <select
                 value={formData.difficulty}
-                onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
+                onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
+                className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-primary"
               >
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
@@ -144,72 +146,77 @@ export function RecipeForm({ recipe, onSubmit, loading }: RecipeFormProps) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Cuisine</label>
+              <label className="mb-1 block text-sm font-medium">Cuisine</label>
               <input
                 type="text"
                 value={formData.cuisine}
-                onChange={(e) => setFormData({ ...formData, cuisine: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
+                onChange={e => setFormData({ ...formData, cuisine: e.target.value })}
+                className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-primary"
                 placeholder="Italian"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
+            <label className="mb-1 block text-sm font-medium">Tags (comma separated)</label>
             <input
               type="text"
-              value={formData.tags.join(', ')}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)
-              })}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
+              value={formData.tags.join(", ")}
+              onChange={e =>
+                setFormData({
+                  ...formData,
+                  tags: e.target.value
+                    .split(",")
+                    .map(t => t.trim())
+                    .filter(Boolean),
+                })
+              }
+              className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-primary"
               placeholder="vegan, gluten-free, quick"
             />
           </div>
         </div>
 
         {/* Hero Image */}
-        <div className="bg-surface p-6 rounded-lg">
-          <h2 className="text-lg font-semibold mb-4">Hero Image</h2>
+        <div className="rounded-lg bg-surface p-6">
+          <h2 className="mb-4 text-lg font-semibold">Hero Image</h2>
           <ImageUpload
             value={formData.hero_image_url}
-            onChange={(url) => setFormData({ ...formData, hero_image_url: url })}
+            onChange={url => setFormData({ ...formData, hero_image_url: url })}
           />
         </div>
 
         {/* Ingredients */}
-        <div className="bg-surface p-6 rounded-lg">
-          <h2 className="text-lg font-semibold mb-4">Ingredients</h2>
+        <div className="rounded-lg bg-surface p-6">
+          <h2 className="mb-4 text-lg font-semibold">Ingredients</h2>
           <IngredientsEditor
             value={formData.ingredients}
-            onChange={(ingredients) => setFormData({ ...formData, ingredients })}
+            onChange={ingredients => setFormData({ ...formData, ingredients })}
           />
         </div>
 
         {/* Steps */}
-        <div className="bg-surface p-6 rounded-lg">
-          <h2 className="text-lg font-semibold mb-4">Instructions</h2>
+        <div className="rounded-lg bg-surface p-6">
+          <h2 className="mb-4 text-lg font-semibold">Instructions</h2>
           <StepsEditor
             value={formData.steps}
-            onChange={(steps) => setFormData({ ...formData, steps })}
+            onChange={steps => setFormData({ ...formData, steps })}
           />
         </div>
 
         {/* Nutrition */}
-        <div className="bg-surface p-6 rounded-lg">
-          <h2 className="text-lg font-semibold mb-4">Nutrition</h2>
+        <div className="rounded-lg bg-surface p-6">
+          <h2 className="mb-4 text-lg font-semibold">Nutrition</h2>
           <button
             type="button"
             onClick={handleCalculateNutrition}
             disabled={nutritionLoading || formData.ingredients.length === 0}
-            className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 disabled:opacity-50"
+            className="rounded-lg bg-accent px-4 py-2 text-white hover:bg-accent/90 disabled:opacity-50"
           >
-            {nutritionLoading ? 'Calculating...' : 'Calculate Nutrition'}
+            {nutritionLoading ? "Calculating..." : "Calculate Nutrition"}
           </button>
           {nutrition && (
-            <div className="mt-4 p-4 bg-background rounded-lg">
+            <div className="mt-4 rounded-lg bg-background p-4">
               <pre className="text-xs">{JSON.stringify(nutrition, null, 2)}</pre>
             </div>
           )}
@@ -221,9 +228,9 @@ export function RecipeForm({ recipe, onSubmit, loading }: RecipeFormProps) {
             type="submit"
             name="status"
             value="draft"
-            onClick={() => setFormData({ ...formData, status: 'draft' })}
+            onClick={() => setFormData({ ...formData, status: "draft" })}
             disabled={loading}
-            className="px-6 py-2 border border-primary text-primary rounded-lg hover:bg-primary/10 disabled:opacity-50"
+            className="rounded-lg border border-primary px-6 py-2 text-primary hover:bg-primary/10 disabled:opacity-50"
           >
             Save Draft
           </button>
@@ -231,9 +238,9 @@ export function RecipeForm({ recipe, onSubmit, loading }: RecipeFormProps) {
             type="submit"
             name="status"
             value="published"
-            onClick={() => setFormData({ ...formData, status: 'published' })}
+            onClick={() => setFormData({ ...formData, status: "published" })}
             disabled={loading}
-            className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+            className="rounded-lg bg-primary px-6 py-2 text-white hover:bg-primary/90 disabled:opacity-50"
           >
             Publish
           </button>
@@ -242,17 +249,17 @@ export function RecipeForm({ recipe, onSubmit, loading }: RecipeFormProps) {
             onClick={() => setShowPreview(!showPreview)}
             className="ml-auto px-4 py-2 text-muted hover:text-text"
           >
-            {showPreview ? 'Hide' : 'Show'} Preview
+            {showPreview ? "Hide" : "Show"} Preview
           </button>
         </div>
       </form>
 
       {/* Live Preview */}
       {showPreview && (
-        <div className="lg:sticky lg:top-4 h-fit">
+        <div className="h-fit lg:sticky lg:top-4">
           <RecipePreview data={formData} />
         </div>
       )}
     </div>
-  )
+  );
 }

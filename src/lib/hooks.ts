@@ -27,9 +27,7 @@ interface UseExternalSearchResult {
   refetch: () => void;
 }
 
-export function useExternalSearch(
-  params: SearchParams
-): UseExternalSearchResult {
+export function useExternalSearch(params: SearchParams): UseExternalSearchResult {
   const [data, setData] = useState<RecipeNormalized[] | null>(null);
   const [total, setTotal] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,13 +42,12 @@ export function useExternalSearch(
 
       if (params.q) searchParams.append("q", params.q);
       if (params.page) searchParams.append("page", params.page.toString());
-      if (params.perPage)
-        searchParams.append("perPage", params.perPage.toString());
+      if (params.perPage) searchParams.append("perPage", params.perPage.toString());
       if (params.cuisine && params.cuisine.length > 0) {
-        params.cuisine.forEach((c) => searchParams.append("cuisine", c));
+        params.cuisine.forEach(c => searchParams.append("cuisine", c));
       }
       if (params.tags && params.tags.length > 0) {
-        params.tags.forEach((tag) => searchParams.append("tags[]", tag));
+        params.tags.forEach(tag => searchParams.append("tags[]", tag));
       }
       if (params.time?.min) {
         searchParams.append("timeMin", params.time.min.toString());
@@ -65,9 +62,7 @@ export function useExternalSearch(
         searchParams.append("calorieMax", params.calories.max.toString());
       }
 
-      const response = await fetch(
-        `/api/catalog/search?${searchParams.toString()}`
-      );
+      const response = await fetch(`/api/catalog/search?${searchParams.toString()}`);
 
       if (!response.ok) {
         throw new Error(`Search failed: ${response.status}`);

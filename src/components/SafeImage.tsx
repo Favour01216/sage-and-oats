@@ -2,17 +2,17 @@
  * SafeImage component with fallback and CLS prevention
  */
 
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Image, { ImageProps } from 'next/image';
+import { useState, useEffect } from "react";
+import Image, { ImageProps } from "next/image";
 
-interface SafeImageProps extends Omit<ImageProps, 'onError'> {
+interface SafeImageProps extends Omit<ImageProps, "onError"> {
   fallbackSrc?: string;
   aspectRatio?: string; // e.g., "16/9", "4/3", "1/1"
 }
 
-const DEFAULT_FALLBACK = '/images/placeholder-recipe.jpg';
+const DEFAULT_FALLBACK = "/images/placeholder-recipe.jpg";
 
 /**
  * SafeImage wrapper component
@@ -26,46 +26,46 @@ export function SafeImage({
   fallbackSrc = DEFAULT_FALLBACK,
   aspectRatio,
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
-  className = '',
+  className = "",
   priority = false,
   ...props
 }: SafeImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
   const [isError, setIsError] = useState(false);
-  
+
   useEffect(() => {
     setImgSrc(src);
     setIsError(false);
   }, [src]);
-  
+
   const handleError = () => {
     if (!isError) {
       setIsError(true);
       setImgSrc(fallbackSrc);
     }
   };
-  
+
   // If Next Image fails completely, fall back to native img
   if (isError && imgSrc === fallbackSrc) {
     return (
-      <div 
+      <div
         className={`relative overflow-hidden bg-gray-100 ${className}`}
         style={aspectRatio ? { aspectRatio } : undefined}
       >
         <img
           src={fallbackSrc}
           alt={alt}
-          loading={priority ? 'eager' : 'lazy'}
-          className="w-full h-full object-cover"
-          onError={(e) => {
+          loading={priority ? "eager" : "lazy"}
+          className="h-full w-full object-cover"
+          onError={e => {
             // Last resort: hide broken image
-            (e.target as HTMLImageElement).style.display = 'none';
+            (e.target as HTMLImageElement).style.display = "none";
           }}
         />
         {/* Fallback overlay */}
         <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
           <svg
-            className="w-12 h-12 text-gray-300"
+            className="h-12 w-12 text-gray-300"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -81,14 +81,11 @@ export function SafeImage({
       </div>
     );
   }
-  
+
   // Wrapper div for aspect ratio if specified
   if (aspectRatio) {
     return (
-      <div 
-        className={`relative overflow-hidden ${className}`}
-        style={{ aspectRatio }}
-      >
+      <div className={`relative overflow-hidden ${className}`} style={{ aspectRatio }}>
         <Image
           src={imgSrc}
           alt={alt}
@@ -102,7 +99,7 @@ export function SafeImage({
       </div>
     );
   }
-  
+
   // Regular Image component
   return (
     <Image
@@ -138,7 +135,7 @@ export function RecipeCardImage({
       aspectRatio="4/3"
       sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
       priority={priority}
-      className="w-full h-full"
+      className="h-full w-full"
     />
   );
 }
@@ -146,13 +143,7 @@ export function RecipeCardImage({
 /**
  * Recipe hero image with optimized settings
  */
-export function RecipeHeroImage({
-  src,
-  alt,
-}: {
-  src: string;
-  alt: string;
-}) {
+export function RecipeHeroImage({ src, alt }: { src: string; alt: string }) {
   return (
     <SafeImage
       src={src}
@@ -162,7 +153,7 @@ export function RecipeHeroImage({
       aspectRatio="2/1"
       sizes="100vw"
       priority
-      className="w-full h-full"
+      className="h-full w-full"
     />
   );
 }

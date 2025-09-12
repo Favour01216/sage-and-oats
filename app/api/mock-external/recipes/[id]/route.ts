@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Mock external API endpoint for getting individual recipes
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   // Mock individual recipe data

@@ -11,13 +11,10 @@ const EDAMAM_BASE_URL = "https://api.edamam.com/api/recipes/v2";
 // Validate environment variables
 if (!EDAMAM_RECIPE_APP_ID || !EDAMAM_RECIPE_APP_KEY) {
   console.warn(
-    "Missing Edamam API credentials. Please set EDAMAM_APP_ID and EDAMAM_APP_KEY in your .env.local file."
+    "Missing Edamam API credentials. Please set EDAMAM_APP_ID and EDAMAM_APP_KEY in your .env.local file.",
   );
   console.log("EDAMAM_APP_ID:", process.env.EDAMAM_APP_ID ? "SET" : "MISSING");
-  console.log(
-    "EDAMAM_APP_KEY:",
-    process.env.EDAMAM_APP_KEY ? "SET" : "MISSING"
-  );
+  console.log("EDAMAM_APP_KEY:", process.env.EDAMAM_APP_KEY ? "SET" : "MISSING");
 }
 
 function range(min?: number, max?: number) {
@@ -57,7 +54,7 @@ class EdamamAPIClient {
       },
       next: { revalidate: 60 },
     })
-      .then(async (response) => {
+      .then(async response => {
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Edamam API Error ${response.status} for URL: ${url}`);
@@ -66,7 +63,7 @@ class EdamamAPIClient {
         }
         return response.json();
       })
-      .catch((error) => {
+      .catch(error => {
         console.error(`Edamam API request failed for ${url}:`, error);
         throw error;
       })
@@ -85,9 +82,7 @@ class EdamamAPIClient {
   async getRecipeById(id: string): Promise<ExtRecipeRaw | null> {
     // Return null if API credentials are missing
     if (!this.appId || !this.appKey) {
-      console.warn(
-        "Edamam API credentials not configured. Cannot fetch recipe by ID."
-      );
+      console.warn("Edamam API credentials not configured. Cannot fetch recipe by ID.");
       return null;
     }
 
@@ -128,12 +123,8 @@ class EdamamAPIClient {
         urisToTry.push(id);
       } else {
         // Legacy format - construct the URI from the extracted ID
-        urisToTry.push(
-          `http://www.edamam.com/ontologies/edamam.owl#recipe_${id}`
-        );
-        urisToTry.push(
-          `https://www.edamam.com/ontologies/edamam.owl#recipe_${id}`
-        );
+        urisToTry.push(`http://www.edamam.com/ontologies/edamam.owl#recipe_${id}`);
+        urisToTry.push(`https://www.edamam.com/ontologies/edamam.owl#recipe_${id}`);
       }
 
       [
@@ -147,16 +138,14 @@ class EdamamAPIClient {
         "totalNutrients",
         "yield",
         "url",
-      ].forEach((f) => url.searchParams.append("field", f));
+      ].forEach(f => url.searchParams.append("field", f));
 
       // Try each URI format until one works
       for (const searchUri of urisToTry) {
         url.searchParams.set("uri", searchUri);
 
         try {
-          const response = await this.makeRequest<{ hits: { recipe: any }[] }>(
-            url.toString()
-          );
+          const response = await this.makeRequest<{ hits: { recipe: any }[] }>(url.toString());
 
           if (response && response.hits && response.hits.length > 0) {
             return this.transformEdamamRecipe(response.hits[0].recipe);
@@ -193,7 +182,7 @@ class EdamamAPIClient {
           "totalNutrients",
           "yield",
           "url",
-        ].forEach((f) => fallbackUrl.searchParams.append("field", f));
+        ].forEach(f => fallbackUrl.searchParams.append("field", f));
 
         try {
           const fallbackResponse = await this.makeRequest<{
@@ -203,14 +192,11 @@ class EdamamAPIClient {
           if (fallbackResponse && fallbackResponse.hits) {
             // Look for the recipe with matching URI in the search results
             const matchingHit = fallbackResponse.hits.find(
-              (hit) =>
-                hit.recipe.uri === id || hit.recipe.uri?.includes(recipeHash)
+              hit => hit.recipe.uri === id || hit.recipe.uri?.includes(recipeHash),
             );
 
             if (matchingHit) {
-              console.log(
-                `Found recipe via fallback search: ${matchingHit.recipe.label}`
-              );
+              console.log(`Found recipe via fallback search: ${matchingHit.recipe.label}`);
               return this.transformEdamamRecipe(matchingHit.recipe);
             }
           }
@@ -240,20 +226,10 @@ class EdamamAPIClient {
     page: number;
     perPage: number;
   }> {
-    const {
-      q = "",
-      tags = [],
-      cuisine = [],
-      page = 1,
-      perPage = 12,
-      time,
-      calories,
-    } = params;
+    const { q = "", tags = [], cuisine = [], page = 1, perPage = 12, time, calories } = params;
 
     // Create cache key for this search
-    const cacheKey = btoa(
-      JSON.stringify({ q, tags, cuisine, page, perPage, time, calories })
-    )
+    const cacheKey = btoa(JSON.stringify({ q, tags, cuisine, page, perPage, time, calories }))
       .replace(/[^a-zA-Z0-9]/g, "")
       .slice(0, 64);
 
@@ -264,21 +240,19 @@ class EdamamAPIClient {
       return {
         items: cachedResults,
         total: cachedResults.length,
-        page: page,
-        perPage: perPage,
+        page,
+        perPage,
       };
     }
 
     // Return empty results if API credentials are missing
     if (!this.appId || !this.appKey) {
-      console.warn(
-        "Edamam API credentials not configured. Returning empty results."
-      );
+      console.warn("Edamam API credentials not configured. Returning empty results.");
       return {
         items: [],
         total: 0,
-        page: page,
-        perPage: perPage,
+        page,
+        perPage,
       };
     }
 
@@ -295,9 +269,7 @@ class EdamamAPIClient {
       // If no query but we have tags, use the first tag as the search term
       // For meal types like breakfast, lunch, dinner
       const mealTypeTags = ["breakfast", "lunch", "dinner", "snack"];
-      const mealType = tags.find((tag) =>
-        mealTypeTags.includes(tag.toLowerCase())
-      );
+      const mealType = tags.find(tag => mealTypeTags.includes(tag.toLowerCase()));
 
       if (mealType) {
         url.searchParams.set("q", mealType);
@@ -316,10 +288,10 @@ class EdamamAPIClient {
     url.searchParams.set("size", String(perPage));
 
     // Optional facets
-    cuisine.forEach((c) => url.searchParams.append("cuisineType", c));
+    cuisine.forEach(c => url.searchParams.append("cuisineType", c));
 
     // Handle tags by mapping them to appropriate Edamam parameters
-    tags.forEach((tag) => {
+    tags.forEach(tag => {
       const lowerTag = tag.toLowerCase();
       // Map meal type tags to mealType parameter
       if (["breakfast", "lunch", "dinner", "snack"].includes(lowerTag)) {
@@ -327,14 +299,7 @@ class EdamamAPIClient {
       }
       // Map diet tags to health parameter
       else if (
-        [
-          "vegan",
-          "vegetarian",
-          "gluten-free",
-          "dairy-free",
-          "keto",
-          "low-carb",
-        ].includes(lowerTag)
+        ["vegan", "vegetarian", "gluten-free", "dairy-free", "keto", "low-carb"].includes(lowerTag)
       ) {
         // Convert tag names to Edamam health labels
         const healthMap: Record<string, string> = {
@@ -371,7 +336,7 @@ class EdamamAPIClient {
       "totalNutrients",
       "yield",
       "url",
-    ].forEach((f) => url.searchParams.append("field", f));
+    ].forEach(f => url.searchParams.append("field", f));
 
     try {
       const response = await this.makeRequest<{
@@ -383,32 +348,28 @@ class EdamamAPIClient {
       }>(url.toString());
 
       const transformedRecipes = response.hits
-        .map((hit) => this.transformEdamamRecipe(hit.recipe))
-        .filter((recipe) => recipe !== null) as ExtRecipeRaw[];
+        .map(hit => this.transformEdamamRecipe(hit.recipe))
+        .filter(recipe => recipe !== null) as ExtRecipeRaw[];
 
       // Cache the search results in Supabase (fire and forget)
       if (transformedRecipes.length > 0) {
-        supabaseCache
-          .cacheSearch(cacheKey, transformedRecipes, params)
-          .catch(console.error);
-        console.log(
-          `✅ Cached ${transformedRecipes.length} search results in Supabase`
-        );
+        supabaseCache.cacheSearch(cacheKey, transformedRecipes, params).catch(console.error);
+        console.log(`✅ Cached ${transformedRecipes.length} search results in Supabase`);
       }
 
       return {
         items: transformedRecipes,
         total: response.count || 0,
-        page: page,
-        perPage: perPage,
+        page,
+        perPage,
       };
     } catch (error) {
       console.error("Edamam search failed:", error);
       return {
         items: [],
         total: 0,
-        page: page,
-        perPage: perPage,
+        page,
+        perPage,
       };
     }
   }
@@ -452,20 +413,17 @@ class EdamamAPIClient {
                 : Math.round(edamamRecipe.calories || 0),
               protein: edamamRecipe.totalNutrients.PROCNT
                 ? Math.round(
-                    (edamamRecipe.totalNutrients.PROCNT.quantity || 0) /
-                      (edamamRecipe.yield || 1)
+                    (edamamRecipe.totalNutrients.PROCNT.quantity || 0) / (edamamRecipe.yield || 1),
                   )
                 : null,
               carbs: edamamRecipe.totalNutrients.CHOCDF
                 ? Math.round(
-                    (edamamRecipe.totalNutrients.CHOCDF.quantity || 0) /
-                      (edamamRecipe.yield || 1)
+                    (edamamRecipe.totalNutrients.CHOCDF.quantity || 0) / (edamamRecipe.yield || 1),
                   )
                 : null,
               fat: edamamRecipe.totalNutrients.FAT
                 ? Math.round(
-                    (edamamRecipe.totalNutrients.FAT.quantity || 0) /
-                      (edamamRecipe.yield || 1)
+                    (edamamRecipe.totalNutrients.FAT.quantity || 0) / (edamamRecipe.yield || 1),
                   )
                 : null,
             }
@@ -508,7 +466,7 @@ class EdamamAPIClient {
 
         // Add delay to respect Edamam rate limits
         if (hasMore) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       } catch (error) {
         console.error(`Failed to fetch page ${page}:`, error);
@@ -524,16 +482,14 @@ class EdamamAPIClient {
 export const externalAPI = new EdamamAPIClient(
   EDAMAM_BASE_URL,
   EDAMAM_RECIPE_APP_ID,
-  EDAMAM_RECIPE_APP_KEY
+  EDAMAM_RECIPE_APP_KEY,
 );
 
 // Export individual functions for easier use
 export const getRecipeById = (id: string) => externalAPI.getRecipeById(id);
-export const searchRecipes = (
-  params: Parameters<typeof externalAPI.searchRecipes>[0]
-) => externalAPI.searchRecipes(params);
-export const getAllRecipes = (batchSize?: number) =>
-  externalAPI.getAllRecipes(batchSize);
+export const searchRecipes = (params: Parameters<typeof externalAPI.searchRecipes>[0]) =>
+  externalAPI.searchRecipes(params);
+export const getAllRecipes = (batchSize?: number) => externalAPI.getAllRecipes(batchSize);
 
 // Helper to check if Edamam API is configured
 export function isExternalAPIConfigured(): boolean {
@@ -541,6 +497,6 @@ export function isExternalAPIConfigured(): boolean {
     EDAMAM_RECIPE_APP_ID &&
       EDAMAM_RECIPE_APP_KEY &&
       EDAMAM_RECIPE_APP_ID !== "your-app-id" &&
-      EDAMAM_RECIPE_APP_KEY !== "your-app-key"
+      EDAMAM_RECIPE_APP_KEY !== "your-app-key",
   );
 }

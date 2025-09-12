@@ -4,7 +4,7 @@ import { Stats, SortBy } from "react-instantsearch";
 
 export default function ResultsToolbar() {
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="mb-6 flex items-center justify-between">
       <Stats
         classNames={{
           root: "text-sm text-muted dark:text-muted-dark",

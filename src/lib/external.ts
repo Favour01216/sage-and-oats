@@ -10,12 +10,10 @@ const mockAPI = {
       const response = await fetch(
         `${
           process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-        }/api/mock-external/recipes/${id}`
+        }/api/mock-external/recipes/${id}`,
       );
       if (!response.ok) {
-        throw new Error(
-          `API Error ${response.status}: ${await response.text()}`
-        );
+        throw new Error(`API Error ${response.status}: ${await response.text()}`);
       }
       const data = await response.json();
       return data;
@@ -34,25 +32,23 @@ const mockAPI = {
       perPage?: number;
       time?: { min?: number; max?: number };
       calories?: { min?: number; max?: number };
-    } = {}
+    } = {},
   ) {
     try {
       const { page = 1, perPage = 12, q = "" } = params;
       const searchParams = new URLSearchParams({
         page: page.toString(),
         per_page: perPage.toString(),
-        q: q,
+        q,
       });
 
       const response = await fetch(
         `${
           process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-        }/api/mock-external/recipes/search?${searchParams}`
+        }/api/mock-external/recipes/search?${searchParams}`,
       );
       if (!response.ok) {
-        throw new Error(
-          `API Error ${response.status}: ${await response.text()}`
-        );
+        throw new Error(`API Error ${response.status}: ${await response.text()}`);
       }
       const data = await response.json();
 

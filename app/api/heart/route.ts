@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { heartPostSchema, heartDeleteSchema } from "@/src/lib/validation";
+import { ok, badRequestZod, unauthorized, serverError, withRateLimit } from "@/src/lib/http";
+import { logger } from "@/src/lib/logger";
+import { ZodError } from "zod";
 
-export async function POST(request: NextRequest) {
+async function handleHeartPost(request: NextRequest) {
   try {
-    const { recipeId, deviceId } = await request.json();
-
-    if (!recipeId) {
-      return NextResponse.json(
-        { error: "Recipe ID is required" },
-        { status: 400 }
-      );
-    }
+    // Parse and validate request body
+    const body = await request.json();
+    const validatedData = heartPostSchema.parse(body);
+    const { recipeId, deviceId } = validatedData;
 
     const supabase = await createClient();
     const {
@@ -22,31 +22,27 @@ export async function POST(request: NextRequest) {
       // Logged in user - use upsert to prevent duplicates
       result = await supabase
         .from("hearts")
-        .upsert(
-          { recipe_id: recipeId, user_id: user.id },
-          { onConflict: "recipe_id,user_id" }
-        );
+        .upsert({ recipe_id: recipeId, user_id: user.id }, { onConflict: "recipe_id,user_id" });
     } else if (deviceId) {
       // Anonymous user with device ID - use upsert to prevent duplicates
       result = await supabase
         .from("hearts")
         .upsert(
           { recipe_id: recipeId, device_id: deviceId },
-          { onConflict: "recipe_id,device_id" }
+          { onConflict: "recipe_id,device_id" },
         );
     } else {
-      return NextResponse.json(
-        { error: "User not authenticated and no device ID provided" },
-        { status: 401 }
-      );
+      return unauthorized("User not authenticated and no device ID provided");
     }
 
     if (result.error) {
-      console.error("Heart insert error:", result.error);
-      return NextResponse.json(
-        { error: "Failed to add heart" },
-        { status: 500 }
-      );
+      logger.error(new Error("Heart insert error"), {
+        requestId: request.headers.get("x-request-id"),
+        userId: user?.id,
+        recipeId,
+        error: result.error,
+      });
+      return serverError("Failed to add heart", result.error);
     }
 
     // Get updated count (distinct users + devices)
@@ -55,28 +51,31 @@ export async function POST(request: NextRequest) {
       .select("*", { count: "exact", head: true })
       .eq("recipe_id", recipeId);
 
-    return NextResponse.json({ success: true, count });
+    return ok({ success: true, count });
   } catch (error) {
-    console.error("Heart API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    if (error instanceof ZodError) {
+      return badRequestZod(error);
+    }
+    return serverError("Heart API error", error);
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export const POST = withRateLimit(handleHeartPost, {
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 50, // 50 requests per window
+});
+
+async function handleHeartDelete(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const recipeId = searchParams.get("recipeId");
     const deviceId = searchParams.get("deviceId");
 
-    if (!recipeId) {
-      return NextResponse.json(
-        { error: "Recipe ID is required" },
-        { status: 400 }
-      );
-    }
+    // Validate query parameters
+    const validatedData = heartDeleteSchema.parse({
+      recipeId,
+      deviceId: deviceId || undefined,
+    });
 
     const supabase = await createClient();
     const {
@@ -88,41 +87,39 @@ export async function DELETE(request: NextRequest) {
       result = await supabase
         .from("hearts")
         .delete()
-        .eq("recipe_id", recipeId)
+        .eq("recipe_id", validatedData.recipeId)
         .eq("user_id", user.id);
-    } else if (deviceId) {
+    } else if (validatedData.deviceId) {
       result = await supabase
         .from("hearts")
         .delete()
-        .eq("recipe_id", recipeId)
-        .eq("device_id", deviceId);
+        .eq("recipe_id", validatedData.recipeId)
+        .eq("device_id", validatedData.deviceId);
     } else {
-      return NextResponse.json(
-        { error: "User not authenticated and no device ID provided" },
-        { status: 401 }
-      );
+      return unauthorized("User not authenticated and no device ID provided");
     }
 
     if (result.error) {
       console.error("Heart delete error:", result.error);
-      return NextResponse.json(
-        { error: "Failed to remove heart" },
-        { status: 500 }
-      );
+      return serverError("Failed to remove heart", result.error);
     }
 
     // Get updated count
     const { count } = await supabase
       .from("hearts")
       .select("*", { count: "exact", head: true })
-      .eq("recipe_id", recipeId);
+      .eq("recipe_id", validatedData.recipeId);
 
-    return NextResponse.json({ success: true, count });
+    return ok({ success: true, count });
   } catch (error) {
-    console.error("Heart API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    if (error instanceof ZodError) {
+      return badRequestZod(error);
+    }
+    return serverError("Heart API error", error);
   }
 }
+
+export const DELETE = withRateLimit(handleHeartDelete, {
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 50, // 50 requests per window
+});

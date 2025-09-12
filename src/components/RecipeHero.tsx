@@ -8,7 +8,7 @@ export default function RecipeHero({ src, alt }: { src: string; alt: string }) {
 
   return (
     <div
-      className="relative w-full h-[48vh] md:h-[60vh] overflow-hidden"
+      className="relative h-[48vh] w-full overflow-hidden md:h-[60vh]"
       style={{ height: "60vh" }} // fallback if Tailwind isn't active
       data-testid="recipe-hero"
     >
@@ -35,7 +35,7 @@ export default function RecipeHero({ src, alt }: { src: string; alt: string }) {
           return imageProps ? (
             <SafeImage {...imageProps} fill sizes="100vw" className="object-cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
               <div className="text-center text-gray-500">
                 <p className="text-2xl font-medium">{alt}</p>
                 <p className="text-sm opacity-75">Image not available</p>

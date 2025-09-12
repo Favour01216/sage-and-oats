@@ -12,16 +12,16 @@ interface SearchShellProps {
 export default function SearchShell({ children }: SearchShellProps) {
   if (!searchClient) {
     return (
-      <div className="min-h-screen bg-oat flex items-center justify-center">
+      <div className="bg-oat flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <h1 className="text-3xl font-semibold mb-4">Search Not Available</h1>
-          <p className="text-gray-600 mb-4">
-            Search functionality requires Algolia configuration. Please set up
-            your Algolia credentials to enable search.
+          <h1 className="mb-4 text-3xl font-semibold">Search Not Available</h1>
+          <p className="mb-4 text-gray-600">
+            Search functionality requires Algolia configuration. Please set up your Algolia
+            credentials to enable search.
           </p>
           <Link
             href="/"
-            className="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+            className="inline-block rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary/90"
           >
             Back to Home
           </Link>
@@ -56,9 +56,7 @@ export default function SearchShell({ children }: SearchShellProps) {
         ]}
         attributesToHighlight={["title", "ingredients_text"]}
       />
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-        {children}
-      </div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">{children}</div>
     </InstantSearch>
   );
 }

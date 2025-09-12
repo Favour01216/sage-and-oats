@@ -7,11 +7,7 @@ export class CollectionManager {
   private supabase: SupabaseClient = createClient();
 
   // Create a new collection
-  async createCollection(
-    name: string,
-    description?: string,
-    isPublic: boolean = false
-  ) {
+  async createCollection(name: string, description?: string, isPublic: boolean = false) {
     const {
       data: { user },
     } = await this.supabase.auth.getUser();
@@ -47,7 +43,7 @@ export class CollectionManager {
         `
         *,
         collection_recipes(count)
-      `
+      `,
       )
       .eq("user_id", targetUserId)
       .order("created_at", { ascending: false });
@@ -61,18 +57,12 @@ export class CollectionManager {
   }
 
   // Add recipe to collection
-  async addRecipeToCollection(
-    collectionId: string,
-    recipeUri: string,
-    notes?: string
-  ) {
-    const { data, error } = await this.supabase
-      .from("collection_recipes")
-      .insert({
-        collection_id: collectionId,
-        recipe_uri: recipeUri,
-        notes,
-      });
+  async addRecipeToCollection(collectionId: string, recipeUri: string, notes?: string) {
+    const { data, error } = await this.supabase.from("collection_recipes").insert({
+      collection_id: collectionId,
+      recipe_uri: recipeUri,
+      notes,
+    });
 
     if (error) throw error;
 
@@ -104,7 +94,7 @@ export class CollectionManager {
         `
         *,
         cached_recipes(recipe_data)
-      `
+      `,
       )
       .eq("collection_id", collectionId)
       .order("added_at", { ascending: false });
@@ -119,9 +109,7 @@ export class CollectionManager {
       ...item,
       recipe_data: item.cached_recipes?.recipe_data || {
         id: item.recipe_uri,
-        title: `Recipe ${
-          item.recipe_uri.split("recipe_")[1]?.slice(0, 8) || "Unknown"
-        }`,
+        title: `Recipe ${item.recipe_uri.split("recipe_")[1]?.slice(0, 8) || "Unknown"}`,
         imageUrl:
           'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"%3E%3Crect width="300" height="200" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" font-family="Arial" font-size="14" fill="%236b7280"%3ERecipe Image%3C/text%3E%3C/svg%3E',
         tags: ["Saved Recipe"],
@@ -144,7 +132,7 @@ export class CollectionManager {
         `
         collection_id,
         user_collections!inner(name)
-      `
+      `,
       )
       .eq("recipe_uri", recipeUri)
       .eq("user_collections.user_id", user.id);
@@ -213,7 +201,7 @@ export class CollectionManager {
         `
         *,
         collection_recipes(count)
-      `
+      `,
       )
       .eq("is_public", true)
       .order("created_at", { ascending: false })
@@ -234,7 +222,7 @@ export class CollectionManager {
       name?: string;
       description?: string;
       is_public?: boolean;
-    }
+    },
   ) {
     const { data, error } = await this.supabase
       .from("user_collections")
@@ -252,10 +240,7 @@ export class CollectionManager {
 
   // Delete collection
   async deleteCollection(collectionId: string) {
-    const { error } = await this.supabase
-      .from("user_collections")
-      .delete()
-      .eq("id", collectionId);
+    const { error } = await this.supabase.from("user_collections").delete().eq("id", collectionId);
 
     if (error) throw error;
   }

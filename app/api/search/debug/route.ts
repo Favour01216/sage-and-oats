@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  ensureIndexSettings,
-  ALGOLIA_INDEX,
-  adminClient,
-} from "@/src/lib/algolia";
+import { ensureIndexSettings, ALGOLIA_INDEX, adminClient } from "@/src/lib/algolia";
 
 export async function GET() {
   try {
@@ -21,8 +17,7 @@ export async function GET() {
     return NextResponse.json({
       index: ALGOLIA_INDEX,
       status: "configured",
-      message:
-        "Algolia admin client is configured. To check data, implement proper v5 API calls.",
+      message: "Algolia admin client is configured. To check data, implement proper v5 API calls.",
     });
   } catch (error) {
     return NextResponse.json({

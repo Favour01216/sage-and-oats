@@ -15,10 +15,7 @@ class SpoonacularAPIClient {
     this.apiKey = apiKey;
   }
 
-  private async makeRequest<T>(
-    endpoint: string,
-    params: URLSearchParams
-  ): Promise<T> {
+  private async makeRequest<T>(endpoint: string, params: URLSearchParams): Promise<T> {
     // Wait for queue to have space
     while (this.requestQueue.length >= this.maxConcurrent) {
       await Promise.race(this.requestQueue);
@@ -34,16 +31,14 @@ class SpoonacularAPIClient {
         Accept: "application/json",
       },
     })
-      .then(async (response) => {
+      .then(async response => {
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(
-            `Spoonacular API Error ${response.status}: ${errorText}`
-          );
+          throw new Error(`Spoonacular API Error ${response.status}: ${errorText}`);
         }
         return response.json();
       })
-      .catch((error) => {
+      .catch(error => {
         console.error(`Spoonacular API request failed for ${url}:`, error);
         throw error;
       })
@@ -64,10 +59,7 @@ class SpoonacularAPIClient {
       const params = new URLSearchParams();
       params.set("includeNutrition", "true");
 
-      const response = await this.makeRequest<any>(
-        `/${id}/information`,
-        params
-      );
+      const response = await this.makeRequest<any>(`/${id}/information`, params);
       return this.transformSpoonacularRecipe(response);
     } catch (error) {
       console.error(`Failed to fetch recipe ${id}:`, error);
@@ -89,15 +81,7 @@ class SpoonacularAPIClient {
     page: number;
     perPage: number;
   }> {
-    const {
-      q = "",
-      tags = [],
-      cuisine = [],
-      page = 1,
-      perPage = 12,
-      time,
-      calories,
-    } = params;
+    const { q = "", tags = [], cuisine = [], page = 1, perPage = 12, time, calories } = params;
 
     // Build Spoonacular query parameters
     const searchParams = new URLSearchParams();
@@ -114,15 +98,10 @@ class SpoonacularAPIClient {
 
     // Diet/tag filters (Spoonacular uses "diet" parameter)
     if (tags.length > 0) {
-      const dietTags = tags.filter((tag) =>
-        [
-          "vegetarian",
-          "vegan",
-          "gluten free",
-          "dairy free",
-          "ketogenic",
-          "paleo",
-        ].includes(tag.toLowerCase())
+      const dietTags = tags.filter(tag =>
+        ["vegetarian", "vegan", "gluten free", "dairy free", "ketogenic", "paleo"].includes(
+          tag.toLowerCase(),
+        ),
       );
       if (dietTags.length > 0) {
         searchParams.append("diet", dietTags.join(","));
@@ -160,29 +139,27 @@ class SpoonacularAPIClient {
       }>(`/complexSearch`, searchParams);
 
       const transformedRecipes = response.results
-        .map((recipe) => this.transformSpoonacularRecipe(recipe))
-        .filter((recipe) => recipe !== null) as ExtRecipeRaw[];
+        .map(recipe => this.transformSpoonacularRecipe(recipe))
+        .filter(recipe => recipe !== null) as ExtRecipeRaw[];
 
       return {
         items: transformedRecipes,
         total: response.totalResults || 0,
-        page: page,
-        perPage: perPage,
+        page,
+        perPage,
       };
     } catch (error) {
       console.error("Spoonacular search failed:", error);
       return {
         items: [],
         total: 0,
-        page: page,
-        perPage: perPage,
+        page,
+        perPage,
       };
     }
   }
 
-  private transformSpoonacularRecipe(
-    spoonacularRecipe: any
-  ): ExtRecipeRaw | null {
+  private transformSpoonacularRecipe(spoonacularRecipe: any): ExtRecipeRaw | null {
     if (!spoonacularRecipe) return null;
 
     try {
@@ -193,15 +170,11 @@ class SpoonacularAPIClient {
         })) || [];
 
       // Extract steps
-      const steps = spoonacularRecipe.analyzedInstructions?.[0]?.steps?.map(
-        (step: any) => ({
-          text: step.step || "",
-        })
-      ) || [
+      const steps = spoonacularRecipe.analyzedInstructions?.[0]?.steps?.map((step: any) => ({
+        text: step.step || "",
+      })) || [
         {
-          text: `View full instructions at ${
-            spoonacularRecipe.sourceUrl || "the source"
-          }`,
+          text: `View full instructions at ${spoonacularRecipe.sourceUrl || "the source"}`,
         },
       ];
 
@@ -219,9 +192,8 @@ class SpoonacularAPIClient {
       if (spoonacularRecipe.nutrition?.nutrients) {
         const nutrients = spoonacularRecipe.nutrition.nutrients;
         const findNutrient = (name: string) =>
-          nutrients.find((n: any) =>
-            n.name.toLowerCase().includes(name.toLowerCase())
-          )?.amount || null;
+          nutrients.find((n: any) => n.name.toLowerCase().includes(name.toLowerCase()))?.amount ||
+          null;
 
         nutrition = {
           calories: findNutrient("calories"),
@@ -275,7 +247,7 @@ class SpoonacularAPIClient {
 
         // Add delay to respect Spoonacular rate limits
         if (hasMore) {
-          await new Promise((resolve) => setTimeout(resolve, 200));
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       } catch (error) {
         console.error(`Failed to fetch page ${page}:`, error);
@@ -288,18 +260,13 @@ class SpoonacularAPIClient {
 }
 
 // Export singleton instance
-export const externalAPI = new SpoonacularAPIClient(
-  SPOONACULAR_BASE_URL,
-  SPOONACULAR_API_KEY
-);
+export const externalAPI = new SpoonacularAPIClient(SPOONACULAR_BASE_URL, SPOONACULAR_API_KEY);
 
 // Export individual functions for easier use
 export const getRecipeById = (id: string) => externalAPI.getRecipeById(id);
-export const searchRecipes = (
-  params: Parameters<typeof externalAPI.searchRecipes>[0]
-) => externalAPI.searchRecipes(params);
-export const getAllRecipes = (batchSize?: number) =>
-  externalAPI.getAllRecipes(batchSize);
+export const searchRecipes = (params: Parameters<typeof externalAPI.searchRecipes>[0]) =>
+  externalAPI.searchRecipes(params);
+export const getAllRecipes = (batchSize?: number) => externalAPI.getAllRecipes(batchSize);
 
 // Helper to check if Spoonacular API is configured
 export function isExternalAPIConfigured(): boolean {

@@ -103,9 +103,7 @@ export async function generateMetadata({
       title: recipe.title,
       description,
       images:
-        recipe.hero_image_url || recipe.imageUrl
-          ? [recipe.hero_image_url || recipe.imageUrl]
-          : [],
+        recipe.hero_image_url || recipe.imageUrl ? [recipe.hero_image_url || recipe.imageUrl] : [],
       type: "article",
     },
     twitter: {
@@ -113,9 +111,7 @@ export async function generateMetadata({
       title: recipe.title,
       description,
       images:
-        recipe.hero_image_url || recipe.imageUrl
-          ? [recipe.hero_image_url || recipe.imageUrl]
-          : [],
+        recipe.hero_image_url || recipe.imageUrl ? [recipe.hero_image_url || recipe.imageUrl] : [],
     },
     alternates: {
       canonical: `/recipe/${recipe.id}`,
@@ -123,11 +119,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function RecipePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function RecipePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: rawId } = await params;
   const id = decodeURIComponent(rawId);
 
@@ -174,7 +166,7 @@ export default async function RecipePage({
             avg_rating: extRecipe.avg_rating || null,
             created_at: new Date().toISOString(),
           }}
-          ingredients={extRecipe.ingredients.map((ing) => ({
+          ingredients={extRecipe.ingredients.map(ing => ({
             line_text: ing.line_text,
             quantity_num: null,
             unit: null,
@@ -199,59 +191,48 @@ export default async function RecipePage({
         />
 
         <main>
-          <RecipeHero
-            src={extRecipe.imageUrl || "/placeholder-recipe.jpg"}
-            alt={extRecipe.title}
-          />
+          <RecipeHero src={extRecipe.imageUrl || "/placeholder-recipe.jpg"} alt={extRecipe.title} />
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <div className="max-w-5xl mx-auto">
-                {/* Title and Meta */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 dark:text-gray-100">
-                      {extRecipe.title}
-                    </h1>
-                    <div className="text-sm text-muted dark:text-muted-dark">
-                      LIVE mode
-                    </div>
-                  </div>                {/* Tags */}
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-5xl">
+              {/* Title and Meta */}
+              <div className="mb-8">
+                <div className="mb-4 flex items-center justify-between">
+                  <h1 className="font-serif text-3xl font-bold text-gray-900 md:text-4xl dark:text-gray-100">
+                    {extRecipe.title}
+                  </h1>
+                  <div className="text-sm text-muted dark:text-muted-dark">LIVE mode</div>
+                </div>{" "}
+                {/* Tags */}
                 {extRecipe.tags && extRecipe.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {extRecipe.tags.map((tag) => (
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    {extRecipe.tags.map(tag => (
                       <Badge key={tag} variant="default">
                         {tag}
                       </Badge>
                     ))}
                   </div>
                 )}
-
                 {/* Meta row */}
                 <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
                   {extRecipe.total_minutes && (
                     <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
+                      <Clock className="h-4 w-4" />
                       <span>{extRecipe.total_minutes} min</span>
                     </div>
                   )}
                   <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
+                    <Users className="h-4 w-4" />
                     <span>4 servings</span>
                   </div>
-                  <HeartButton
-                    recipeId={extRecipe.id}
-                    initialCount={heartCount || 0}
-                    size="sm"
-                  />
+                  <HeartButton recipeId={extRecipe.id} initialCount={heartCount || 0} size="sm" />
                   {extRecipe.avg_rating && (
                     <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-current text-yellow-400" />
+                      <Star className="h-4 w-4 fill-current text-yellow-400" />
                       <span>{extRecipe.avg_rating.toFixed(1)}</span>
                     </div>
                   )}
-                  <div className="text-xs text-gray-500">
-                    ~{readTime} min read
-                  </div>
+                  <div className="text-xs text-gray-500">~{readTime} min read</div>
                 </div>
               </div>
 
@@ -268,7 +249,7 @@ export default async function RecipePage({
                   ingredients: extRecipe.ingredients,
                   steps: extRecipe.steps,
                   nutrition: extRecipe.nutrition,
-                  source_url: extRecipe.source_url
+                  source_url: extRecipe.source_url,
                 }}
                 heartCount={heartCount || 0}
                 defaultServings={4}

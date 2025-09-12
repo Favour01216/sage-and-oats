@@ -1,0 +1,19 @@
+# Global owners
+* @your-team
+
+# Core application files
+/app/ @your-team
+/src/ @your-team
+/package.json @your-team
+/tsconfig.json @your-team
+/next.config.ts @your-team
+
+# Security and configuration
+/.github/ @your-team
+/supabase/ @your-team
+/.env* @your-team
+
+# Documentation
+/README.md @your-team
+/CONTRIBUTING.md @your-team
+/SECURITY.md @your-team

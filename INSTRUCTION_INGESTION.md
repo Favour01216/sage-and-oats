@@ -25,11 +25,13 @@ The instruction ingestion system provides a legal and ethical way to incorporate
 ### Modes
 
 #### LIVE Mode
+
 - Instructions are fetched when a user opens a recipe page
 - If allowed domain: steps are ingested and stored for future use
 - If not allowed: attribution link to source is shown
 
 #### MIRROR Mode
+
 - Instructions are ingested during catalog sync operations
 - Only processes recipes from allowed domains
 - Stores steps in `recipe_steps` table with provenance tracking
@@ -39,6 +41,7 @@ The instruction ingestion system provides a legal and ethical way to incorporate
 ### Adding Allowed Domains
 
 **IMPORTANT**: Only add domains to `ALLOWED_INSTRUCTION_SOURCES` if you have:
+
 - Explicit written permission from the domain owner
 - Verified that their terms of service allow re-use
 - Confirmed they provide a public API for this purpose
@@ -81,6 +84,7 @@ CREATE TABLE recipe_steps (
 ### In Recipe Pages
 
 The `StepList` component automatically:
+
 - Shows ingested instructions with attribution
 - Displays "View full instructions" link for non-allowed sources
 - Provides proper attribution for all external content
@@ -88,7 +92,7 @@ The `StepList` component automatically:
 ### Server-Side Integration
 
 ```typescript
-import { ingestInstructionsLive } from '@/src/lib/instructions/server';
+import { ingestInstructionsLive } from "@/src/lib/instructions/server";
 
 // In recipe page loader
 const recipeWithInstructions = await ingestInstructionsLive(recipe);
@@ -114,6 +118,7 @@ This system is designed to help you create a compliant instruction ingestion sys
 ## Examples
 
 ### Allowed Source (Hypothetical)
+
 ```
 Recipe from "Public Recipe Database"
 Instructions adapted from public-recipes.gov
@@ -121,6 +126,7 @@ Instructions adapted from public-recipes.gov
 ```
 
 ### Non-Allowed Source
+
 ```
 Recipe from "Example Food Blog"
 View full instructions at source

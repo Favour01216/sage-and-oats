@@ -1,17 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import {
-  testCacheSystem,
-  testCollectionManager,
-} from "@/src/lib/test-supabase";
+import { testCacheSystem, testCollectionManager } from "@/src/lib/test-supabase";
 
 export default function AdminTestPage() {
   const [testResults, setTestResults] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
 
   const addResult = (message: string) => {
-    setTestResults((prev) => [...prev, message]);
+    setTestResults(prev => [...prev, message]);
   };
 
   const runTests = async () => {
@@ -39,30 +36,27 @@ export default function AdminTestPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-8">Supabase Integration Test</h1>
+      <div className="mx-auto max-w-4xl px-4">
+        <h1 className="mb-8 text-3xl font-bold">Supabase Integration Test</h1>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            Test Supabase Caching & Collections
-          </h2>
-          <p className="text-gray-600 mb-4">
-            This page tests our new Supabase caching system and collection
-            management features.
+        <div className="mb-8 rounded-lg bg-white p-6 shadow-md">
+          <h2 className="mb-4 text-xl font-semibold">Test Supabase Caching & Collections</h2>
+          <p className="mb-4 text-gray-600">
+            This page tests our new Supabase caching system and collection management features.
           </p>
 
           <button
             onClick={runTests}
             disabled={testing}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {testing ? "Running Tests..." : "Run Tests"}
           </button>
         </div>
 
         {testResults.length > 0 && (
-          <div className="bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-sm">
-            <h3 className="text-white font-bold mb-2">Test Results:</h3>
+          <div className="rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400">
+            <h3 className="mb-2 font-bold text-white">Test Results:</h3>
             {testResults.map((result, index) => (
               <div key={index} className="mb-1">
                 {result}
@@ -71,30 +65,30 @@ export default function AdminTestPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-6 mt-8">
-          <h2 className="text-xl font-semibold mb-4">System Status</h2>
+        <div className="mt-8 rounded-lg bg-white p-6 shadow-md">
+          <h2 className="mb-4 text-xl font-semibold">System Status</h2>
           <div className="space-y-2">
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+              <div className="mr-2 h-3 w-3 rounded-full bg-green-500"></div>
               <span>Database migration deployed</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+              <div className="mr-2 h-3 w-3 rounded-full bg-green-500"></div>
               <span>Supabase cache service created</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+              <div className="mr-2 h-3 w-3 rounded-full bg-green-500"></div>
               <span>Collection manager created</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+              <div className="mr-2 h-3 w-3 rounded-full bg-green-500"></div>
               <span>External API updated with caching</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mt-8">
-          <h2 className="text-xl font-semibold mb-4">Next Steps</h2>
+        <div className="mt-8 rounded-lg bg-white p-6 shadow-md">
+          <h2 className="mb-4 text-xl font-semibold">Next Steps</h2>
           <ul className="space-y-2 text-gray-700">
             <li>• Integrate authentication (Google/GitHub)</li>
             <li>• Update recipe pages to use collections</li>

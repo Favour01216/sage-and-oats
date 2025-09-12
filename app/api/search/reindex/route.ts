@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     // Get recipe IDs for related data
-    const recipeIds = recipes.map((r) => r.id);
+    const recipeIds = recipes.map(r => r.id);
 
     // Fetch ingredients for all recipes
     const { data: ingredients } = await supabase
@@ -39,20 +39,26 @@ export async function POST(request: Request) {
 
     // Create lookup maps
     const ingredientsMap =
-      ingredients?.reduce((acc, ing) => {
-        if (!acc[ing.recipe_id]) acc[ing.recipe_id] = [];
-        acc[ing.recipe_id].push(ing.line_text);
-        return acc;
-      }, {} as Record<string, string[]>) || {};
+      ingredients?.reduce(
+        (acc, ing) => {
+          if (!acc[ing.recipe_id]) acc[ing.recipe_id] = [];
+          acc[ing.recipe_id].push(ing.line_text);
+          return acc;
+        },
+        {} as Record<string, string[]>,
+      ) || {};
 
     const nutritionMap =
-      nutrition?.reduce((acc, nut) => {
-        acc[nut.recipe_id] = nut.calories || 0;
-        return acc;
-      }, {} as Record<string, number>) || {};
+      nutrition?.reduce(
+        (acc, nut) => {
+          acc[nut.recipe_id] = nut.calories || 0;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ) || {};
 
     // Transform recipes to Algolia records
-    const records: RecipeSearchRecord[] = recipes.map((recipe) => ({
+    const records: RecipeSearchRecord[] = recipes.map(recipe => ({
       objectID: recipe.id,
       id: recipe.id,
       slug: recipe.slug,
@@ -70,7 +76,10 @@ export async function POST(request: Request) {
 
     // Save to Algolia
     if (adminClient) {
-      await adminClient.saveObjects({ indexName: recipesIndexName, objects: records as unknown as Record<string, unknown>[] });
+      await adminClient.saveObjects({
+        indexName: recipesIndexName,
+        objects: records as unknown as Record<string, unknown>[],
+      });
     }
 
     return NextResponse.json({
@@ -80,9 +89,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Reindex error:", error);
-    return NextResponse.json(
-      { error: "Failed to reindex recipes" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to reindex recipes" }, { status: 500 });
   }
 }

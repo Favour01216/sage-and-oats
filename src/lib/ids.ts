@@ -13,15 +13,15 @@ export function getRecipeKey(recipe: { id?: string | number; slug?: string }): s
   if (recipe.id) {
     return String(recipe.id);
   }
-  
+
   // Fallback to slug if no ID available
   if (recipe.slug) {
     return recipe.slug;
   }
-  
+
   // Should not happen in practice, but provide a fallback
-  console.warn('Recipe has neither id nor slug:', recipe);
-  return 'unknown';
+  console.warn("Recipe has neither id nor slug:", recipe);
+  return "unknown";
 }
 
 /**
@@ -34,7 +34,7 @@ export function extractRecipeId(recipe: any): string {
   if (recipe.externalId) {
     return recipe.externalId;
   }
-  
+
   // Handle database recipe format
   if (recipe.recipe_uri) {
     // Extract ID from URI if it's in format like "recipe_123"
@@ -44,7 +44,7 @@ export function extractRecipeId(recipe: any): string {
     }
     return recipe.recipe_uri;
   }
-  
+
   // Use getRecipeKey for standard handling
   return getRecipeKey(recipe);
 }
@@ -56,7 +56,7 @@ export function extractRecipeId(recipe: any): string {
  */
 export function createRecipeUri(recipeId: string): string {
   // Use consistent format: recipe_<id>
-  if (recipeId.startsWith('recipe_')) {
+  if (recipeId.startsWith("recipe_")) {
     return recipeId;
   }
   return `recipe_${recipeId}`;
@@ -68,7 +68,7 @@ export function createRecipeUri(recipeId: string): string {
  * @returns Extracted ID
  */
 export function parseRecipeUri(uri: string): string {
-  if (uri.startsWith('recipe_')) {
+  if (uri.startsWith("recipe_")) {
     return uri.substring(7);
   }
   return uri;

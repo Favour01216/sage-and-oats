@@ -25,7 +25,7 @@ function getImageSourceType(url: string): "spoonacular" | "edamam" | "other" {
  * Generate all available sizes for a Spoonacular image URL
  */
 export function getSpoonacularImageSizes(
-  originalUrl: string | null | undefined
+  originalUrl: string | null | undefined,
 ): SpoonacularImageSizes | null {
   if (!originalUrl) return null;
 
@@ -48,7 +48,7 @@ export function getSpoonacularImageSizes(
  */
 export function getBestImageSize(
   originalUrl: string | null | undefined,
-  size: keyof SpoonacularImageSizes = "xxlarge"
+  size: keyof SpoonacularImageSizes = "xxlarge",
 ): string | null {
   if (!originalUrl) return null;
 
@@ -103,13 +103,9 @@ export function getResponsiveSizes(
     mobile?: keyof SpoonacularImageSizes;
     tablet?: keyof SpoonacularImageSizes;
     desktop?: keyof SpoonacularImageSizes;
-  } = {}
+  } = {},
 ): string {
-  const {
-    mobile = "medium",
-    tablet = "large",
-    desktop = "xxlarge",
-  } = breakpoints;
+  const { mobile = "medium", tablet = "large", desktop = "xxlarge" } = breakpoints;
 
   return `(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw`;
 }
@@ -124,7 +120,7 @@ export function getOptimizedImageProps(
     size?: keyof SpoonacularImageSizes;
     priority?: boolean;
     responsive?: boolean;
-  } = {}
+  } = {},
 ) {
   const { size = "xxlarge", priority = false, responsive = true } = options;
 

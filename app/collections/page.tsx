@@ -29,16 +29,18 @@ async function getHeartCounts(recipeIds: string[]): Promise<Record<string, numbe
     .select("recipe_id")
     .in("recipe_id", recipeIds);
 
-  return hearts?.reduce((acc: Record<string, number>, heart: any) => {
-    acc[heart.recipe_id] = (acc[heart.recipe_id] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>) || {};
+  return (
+    hearts?.reduce(
+      (acc: Record<string, number>, heart: any) => {
+        acc[heart.recipe_id] = (acc[heart.recipe_id] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    ) || {}
+  );
 }
 
-async function hydrateRecipe(
-  heart: HeartedRecipe,
-  heartCount: number
-): Promise<CardData | null> {
+async function hydrateRecipe(heart: HeartedRecipe, heartCount: number): Promise<CardData | null> {
   // First try to use snapshot data if available
   if (heart.title_snapshot && heart.image_url_snapshot) {
     return mapRecipeRowToCard({
@@ -57,7 +59,8 @@ async function hydrateRecipe(
     const supabase = await createClient();
     const { data: recipe } = await supabase
       .from("recipes")
-      .select(`
+      .select(
+        `
         id,
         slug,
         title,
@@ -66,7 +69,8 @@ async function hydrateRecipe(
         total_minutes,
         avg_rating,
         source_url
-      `)
+      `,
+      )
       .eq("id", heart.recipe_id)
       .single();
 
@@ -107,7 +111,9 @@ export default async function CollectionsPage() {
   const supabase = await createClient();
 
   // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   let heartedRecipes: HeartedRecipe[] = [];
   let recipes: CardData[] = [];
@@ -116,11 +122,13 @@ export default async function CollectionsPage() {
     // Authenticated users: get from Supabase with snapshots
     const { data, error } = await supabase
       .from("hearts")
-      .select(`
+      .select(
+        `
         id,
         recipe_id,
         created_at
-      `)
+      `,
+      )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -139,9 +147,7 @@ export default async function CollectionsPage() {
     const heartCounts = await getHeartCounts(recipeIds);
 
     const hydratedRecipes = await Promise.all(
-      heartedRecipes.map(heart =>
-        hydrateRecipe(heart, heartCounts[heart.recipe_id] || 1)
-      )
+      heartedRecipes.map(heart => hydrateRecipe(heart, heartCounts[heart.recipe_id] || 1)),
     );
 
     recipes = hydratedRecipes.filter((r): r is CardData => r !== null);
@@ -149,12 +155,12 @@ export default async function CollectionsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Heart className="w-8 h-8 text-accent fill-current" />
-            <h1 className="text-3xl font-serif font-bold text-gray-900 dark:text-gray-100">
+          <div className="mb-4 flex items-center gap-3">
+            <Heart className="h-8 w-8 fill-current text-accent" />
+            <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100">
               My Collection
             </h1>
           </div>
@@ -165,21 +171,20 @@ export default async function CollectionsPage() {
 
         {recipes.length === 0 ? (
           /* Empty State */
-          <div className="text-center py-16">
-            <Heart className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <div className="py-16 text-center">
+            <Heart className="mx-auto mb-4 h-16 w-16 text-gray-300 dark:text-gray-600" />
+            <h2 className="mb-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
               No saved recipes yet
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-              Start exploring recipes and tap the heart icon to save your
-              favorites here.
+            <p className="mx-auto mb-6 max-w-md text-gray-600 dark:text-gray-400">
+              Start exploring recipes and tap the heart icon to save your favorites here.
             </p>
             <Link href="/">
               <Button>Discover Recipes</Button>
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {recipes.map((recipe, index) => (
               <RecipeCard
                 key={recipe.id}
