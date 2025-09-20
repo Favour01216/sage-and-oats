@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChefHat } from "lucide-react";
 import { RecipeContent } from "@/src/components/RecipeContent";
 import { ServingsControl } from "@/src/components/ServingsControl";
@@ -50,6 +51,12 @@ export function RecipePageClient({
 }: RecipePageClientProps) {
   const [servings, setServings] = useState(defaultServings);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>("us");
+
+  // Check if this recipe has useful steps for cook mode
+  const hasDetailedSteps =
+    recipe.steps &&
+    recipe.steps.length > 1 &&
+    !recipe.steps[0]?.text?.includes("Visit the source for detailed cooking instructions");
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -120,12 +127,15 @@ export function RecipePageClient({
           {/* Action Card */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="space-y-4">
-              <a href={`/cook/${recipe.id}`}>
-                <Button size="lg" className="w-full gap-2">
-                  <ChefHat className="h-5 w-5" />
-                  Start Cook Mode
-                </Button>
-              </a>
+              {/* Only show cook mode for recipes with detailed steps */}
+              {hasDetailedSteps && (
+                <Link href={`/cook/${recipe.id}`}>
+                  <Button size="lg" className="w-full gap-2">
+                    <ChefHat className="h-5 w-5" />
+                    Start Cook Mode
+                  </Button>
+                </Link>
+              )}
 
               <HeartButton
                 recipeId={recipe.id}

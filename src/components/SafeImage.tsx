@@ -12,7 +12,7 @@ interface SafeImageProps extends Omit<ImageProps, "onError"> {
   aspectRatio?: string; // e.g., "16/9", "4/3", "1/1"
 }
 
-const DEFAULT_FALLBACK = "/images/placeholder-recipe.jpg";
+const DEFAULT_FALLBACK = "/placeholder-recipe.svg";
 
 /**
  * SafeImage wrapper component

@@ -75,6 +75,21 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
     // Always use external API (LIVE mode)
     if (externalRecipe && !externalLoading) {
       setRecipe(externalRecipe);
+
+      // Check if this is an external recipe with only source redirect
+      const isExternalOnly =
+        externalRecipe.steps?.length === 1 &&
+        externalRecipe.steps[0]?.text?.includes(
+          "Visit the source for detailed cooking instructions",
+        );
+
+      if (isExternalOnly) {
+        // Don't try to use cook mode for external-only recipes
+        setSteps([]);
+        setLoading(false);
+        return;
+      }
+
       // Convert external recipe steps to the expected format
       const convertedSteps = externalRecipe.steps.map((step: any, index: number) => ({
         id: `ext-${index}`,
@@ -139,7 +154,7 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
         if (prev === null || prev <= 1) {
           // Timer finished
           const audio = new Audio("/timer-done.mp3");
-          audio.play().catch(() => { });
+          audio.play().catch(() => {});
           setTimerStartTime(null);
           saveState(currentStepIndex, completedSteps, null);
           return null;
@@ -208,7 +223,7 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
     );
   }
 
-  if (!recipe || steps.length === 0) {
+  if (!recipe) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background dark:bg-background-dark">
         <div className="text-center">
@@ -221,6 +236,36 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
     );
   }
 
+  // Handle external recipes that only have source links
+  if (steps.length === 0 && recipe.source_url) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background dark:bg-background-dark">
+        <div className="mx-auto max-w-md p-8 text-center">
+          <h1 className="mb-4 text-2xl font-bold text-text dark:text-text-dark">{recipe.title}</h1>
+          <p className="mb-6 text-muted dark:text-muted-dark">
+            This recipe needs to be cooked following the instructions on the original website.
+          </p>
+          <div className="space-y-3">
+            <a
+              href={recipe.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-lg bg-primary px-4 py-3 text-white transition-colors hover:bg-primary/90"
+            >
+              View Full Recipe
+            </a>
+            <Link
+              href={`/recipe/${recipe.id}`}
+              className="block w-full rounded-lg border border-border px-4 py-3 text-text transition-colors hover:bg-muted/10 dark:border-border-dark dark:text-text-dark"
+            >
+              Back to Recipe
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const currentStep = steps[currentStepIndex];
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
 
@@ -228,12 +273,8 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Step not found
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Please check the recipe steps.
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Step not found</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Please check the recipe steps.</p>
         </div>
       </div>
     );
@@ -281,10 +322,11 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
               <span className="text-5xl font-bold text-primary">{currentStep.step_number}</span>
               <button
                 onClick={handleToggleComplete}
-                className={`rounded-lg p-3 transition-colors ${completedSteps.has(currentStepIndex)
+                className={`rounded-lg p-3 transition-colors ${
+                  completedSteps.has(currentStepIndex)
                     ? "bg-primary text-white"
                     : "bg-muted/10 text-muted hover:bg-muted/20 dark:text-muted-dark"
-                  }`}
+                }`}
                 aria-label={
                   completedSteps.has(currentStepIndex) ? "Mark as incomplete" : "Mark as complete"
                 }
@@ -334,10 +376,11 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
               <button
                 onClick={handlePrevStep}
                 disabled={currentStepIndex === 0}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${currentStepIndex === 0
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
+                  currentStepIndex === 0
                     ? "cursor-not-allowed bg-muted/10 text-muted/50"
                     : "bg-muted/10 text-text hover:bg-muted/20 dark:text-text-dark"
-                  }`}
+                }`}
               >
                 <ChevronLeft className="h-5 w-5" />
                 Previous
@@ -348,12 +391,13 @@ export default function CookModePage({ params }: { params: Promise<{ id: string 
                   <button
                     key={index}
                     onClick={() => handleStepClick(index)}
-                    className={`h-2 w-2 rounded-full transition-colors ${index === currentStepIndex
+                    className={`h-2 w-2 rounded-full transition-colors ${
+                      index === currentStepIndex
                         ? "w-8 bg-primary"
                         : completedSteps.has(index)
                           ? "bg-primary/50"
                           : "bg-muted/30"
-                      }`}
+                    }`}
                     aria-label={`Go to step ${index + 1}`}
                   />
                 ))}

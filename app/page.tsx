@@ -138,12 +138,6 @@ export default async function Home() {
                   Browse Recipes
                 </Button>
               </Link>
-              <Link href="/cook/lemon-herb-roasted-chicken">
-                <Button variant="outline" size="lg" className="gap-2">
-                  <ChefHat className="h-5 w-5" />
-                  Cook Mode Demo
-                </Button>
-              </Link>
             </div>
           </div>
         </div>

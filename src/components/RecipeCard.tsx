@@ -35,6 +35,7 @@ export default function RecipeCard({
 }: RecipeCardProps) {
   // Ensure HTTPS for images
   const secureImageUrl = imageUrl?.replace(/^http:\/\//i, "https://");
+
   return (
     <div
       className={cn(

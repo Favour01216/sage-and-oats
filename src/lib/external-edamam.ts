@@ -233,10 +233,10 @@ class EdamamAPIClient {
       .replace(/[^a-zA-Z0-9]/g, "")
       .slice(0, 64);
 
-    // Check Supabase cache first
+    // Check Supabase cache first (with shorter duration for fresh images)
     const cachedResults = await supabaseCache.getCachedSearch(cacheKey);
     if (cachedResults && Array.isArray(cachedResults)) {
-      console.log("� Using Supabase cached search results!");
+      console.log("🚀 Using Supabase cached search results!");
       return {
         items: cachedResults,
         total: cachedResults.length,
@@ -381,8 +381,21 @@ class EdamamAPIClient {
     if (!edamamRecipe) return null;
 
     try {
-      // Use the full URI as the ID since that's what we need to search by
-      const recipeId = edamamRecipe.uri || "unknown";
+      // Extract a clean ID from the URI instead of using the full URI
+      const originalUri = edamamRecipe.uri || "unknown";
+
+      // Extract the hash part and create a clean ID
+      let recipeId = originalUri;
+      if (originalUri.includes("#recipe_")) {
+        // Extract just the recipe part: "http://www.edamam.com/ontologies/edamam.owl#recipe_abc123" -> "abc123"
+        recipeId = originalUri.split("#recipe_")[1] || originalUri;
+      } else if (originalUri.includes("/")) {
+        // Extract last part of URL path
+        recipeId = originalUri.split("/").pop() || originalUri;
+      }
+
+      // Ensure it's a clean ID
+      recipeId = recipeId.replace(/[^a-zA-Z0-9]/g, "").substring(0, 20) || "unknown";
 
       const result = {
         id: recipeId,
@@ -432,7 +445,10 @@ class EdamamAPIClient {
             }
           : null,
         source_url: edamamRecipe.url || null,
-        raw_external: edamamRecipe, // Store full Edamam response
+        raw_external: {
+          ...edamamRecipe,
+          originalUri: originalUri, // Store original URI for lookups
+        },
       };
 
       // Cache the transformed recipe in both places

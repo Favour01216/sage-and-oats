@@ -22,7 +22,7 @@ interface EdamamRecipe {
 export class SupabaseRecipeCache {
   private supabase = createClient();
   private readonly CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
-  private readonly SEARCH_CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
+  private readonly SEARCH_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes (shorter for fresh AWS URLs)
 
   async cacheRecipe(recipeUri: string, recipeData: EdamamRecipe): Promise<void> {
     try {
